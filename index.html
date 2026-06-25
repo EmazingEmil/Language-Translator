@@ -142,15 +142,15 @@ Duuaduquxaaevaka fava vamu saidu rihakaduri</textarea>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950/40 border border-slate-800/50 p-4 rounded-lg">
                     <div class="flex flex-col gap-2">
                         <div class="flex justify-between items-center">
-                            <label class="text-xs text-slate-400 uppercase tracking-wider" for="shift-slider">Global Override Shift (N):</label>
+                            <label class="text-xs text-slate-400 uppercase tracking-wider" for="shift-slider">Shift Value Override (N):</label>
                             <span id="shift-badge" class="bg-blue-950 text-blue-300 text-xs px-2 py-0.5 rounded border border-blue-800 font-bold code-font">Auto</span>
                         </div>
                         <input 
                             type="range" 
                             id="shift-slider" 
-                            min="-11" 
+                            min="-10" 
                             max="10" 
-                            value="-11" 
+                            value="0" 
                             class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
                         >
                     </div>
@@ -158,7 +158,10 @@ Duuaduquxaaevaka fava vamu saidu rihakaduri</textarea>
                     <div class="flex flex-col justify-center gap-1.5">
                         <div class="text-xs text-slate-400 uppercase tracking-wider">Multi-Shift Detection:</div>
                         <div class="flex items-center gap-2">
-                            <span class="text-xs text-emerald-400 font-semibold bg-emerald-950/40 border border-emerald-900/50 px-2.5 py-1 rounded">Active Line-by-Line</span>
+                            <button id="auto-detect-btn" class="bg-emerald-950 text-emerald-300 border border-emerald-800 text-xs px-3 py-1.5 rounded hover:bg-emerald-900 transition-all font-semibold uppercase tracking-wider flex items-center gap-1">
+                                🔍 Auto-Detect Shift
+                            </button>
+                            <span id="auto-detect-indicator" class="text-xs text-emerald-400 font-semibold bg-emerald-950/40 border border-emerald-900/50 px-2.5 py-1 rounded">Active Line-by-Line</span>
                         </div>
                     </div>
                 </div>
@@ -261,8 +264,8 @@ Duuaduquxaaevaka fava vamu saidu rihakaduri</textarea>
         const decodedOutput = document.getElementById('decoded-output');
         const clearBtn = document.getElementById('clear-btn');
         const copyBtn = document.getElementById('copy-btn');
-        const autoDetectBtn = document.getElementById('auto-detect-btn');
         const autoDetectIndicator = document.getElementById('auto-detect-indicator');
+        const autoDetectBtn = document.getElementById('auto-detect-btn');
         const analysisContainer = document.getElementById('analysis-container');
         const dropZone = document.getElementById('drop-zone');
         const fileInput = document.getElementById('file-input');
@@ -324,6 +327,7 @@ Duuaduquxaaevaka fava vamu saidu rihakaduri</textarea>
         };
 
         let sessionLogs = [];
+        let isAutoMode = true;
 
         async function fetchWithRetry(url, options, maxRetries = 5) {
             let delay = 1000;
@@ -597,8 +601,10 @@ Duuaduquxaaevaka fava vamu saidu rihakaduri</textarea>
             const decodedLines = [];
             let allBreakdowns = [];
 
-            if (shiftVal === -11) {
-                shiftBadge.innerText = "Auto (Multi)";
+            if (isAutoMode) {
+                shiftBadge.innerText = "Auto";
+                autoDetectIndicator.innerText = "Active Line-by-Line";
+                autoDetectIndicator.className = "text-xs text-emerald-400 font-semibold bg-emerald-950/40 border border-emerald-900/50 px-2.5 py-1 rounded";
                 
                 lines.forEach(line => {
                     if (!line.trim()) {
@@ -612,6 +618,8 @@ Duuaduquxaaevaka fava vamu saidu rihakaduri</textarea>
                 });
             } else {
                 shiftBadge.innerText = (shiftVal >= 0 ? '+' : '') + shiftVal;
+                autoDetectIndicator.innerText = `Override (${shiftVal >= 0 ? '+' : ''}${shiftVal})`;
+                autoDetectIndicator.className = "text-xs text-amber-500 font-semibold bg-amber-950/40 border border-amber-900/50 px-2.5 py-1 rounded";
                 
                 lines.forEach(line => {
                     if (!line.trim()) {
@@ -681,7 +689,7 @@ Duuaduquxaaevaka fava vamu saidu rihakaduri</textarea>
 
                 if (item.steps && item.steps.length > 0) {
                     item.steps.forEach(step => {
-                        const targetShift = (shiftVal === -11) ? detectOptimalShift(item.rawWord).shift : shiftVal;
+                        const targetShift = isAutoMode ? detectOptimalShift(item.rawWord).shift : shiftVal;
                         const mathString = targetShift >= 0 ? `+ ${targetShift}` : `- ${Math.abs(targetShift)}`;
                         
                         const itemRow = document.createElement('div');
@@ -772,15 +780,7 @@ Duuaduquxaaevaka fava vamu saidu rihakaduri</textarea>
                     const cleanedOutputText = text.split('\n').map(line => line.trim()).filter(line => line.length > 0).join('\n');
                     encodedInput.value = cleanedOutputText;
                     
-                    const detection = detectOptimalShift(cleanedOutputText);
-                    if (detection.confidence > 0) {
-                        shiftSlider.value = detection.shift;
-                        autoDetectIndicator.innerText = `Auto-Selected (Confidence: ${detection.confidence})`;
-                        autoDetectIndicator.className = "text-xs text-emerald-400 font-semibold";
-                    } else {
-                        autoDetectIndicator.innerText = "No auto-matches, manual override active";
-                        autoDetectIndicator.className = "text-xs text-slate-500";
-                    }
+                    isAutoMode = true;
                     updateDecryption();
                 } else {
                     throw new Error("No cipher text detected in the scanning sweep.");
@@ -822,7 +822,7 @@ Duuaduquxaaevaka fava vamu saidu rihakaduri</textarea>
 
                 logItem.innerHTML = `
                     <div class="flex justify-between items-center text-[10px] text-slate-500">
-                        <span class="font-bold text-indigo-400">LOG #${idx + 1} &bull; SHIFT ${log.shift >= 0 ? '+' : ''}${log.shift}</span>
+                        <span class="font-bold text-indigo-400">LOG #${idx + 1} &bull; SHIFT ${log.shift === "Auto" ? "Auto" : (log.shift >= 0 ? '+' : '') + log.shift}</span>
                         <button onclick="navigator.clipboard.writeText('${log.decoded.replace(/'/g, "\\'")}');" class="text-blue-400 hover:text-blue-300 transition-colors uppercase font-bold tracking-widest text-[9px]">Copy</button>
                     </div>
                     <div class="text-slate-400 font-mono tracking-wide break-all">${log.raw}</div>
@@ -870,43 +870,23 @@ Duuaduquxaaevaka fava vamu saidu rihakaduri</textarea>
         });
 
         encodedInput.addEventListener('input', () => {
-            const detection = detectOptimalShift(encodedInput.value);
-            if (detection.confidence > 0) {
-                if (parseInt(shiftSlider.value) !== -11) {
-                    shiftSlider.value = detection.shift;
-                }
-                autoDetectIndicator.innerText = `Auto-Selected (Confidence: ${detection.confidence})`;
-                autoDetectIndicator.className = "text-xs text-emerald-400 font-semibold";
-            } else {
-                autoDetectIndicator.innerText = "No auto-matches, manual override active";
-                autoDetectIndicator.className = "text-xs text-slate-500";
-            }
             updateDecryption();
         });
 
         shiftSlider.addEventListener('input', () => {
-            if (parseInt(shiftSlider.value) === -11) {
-                autoDetectIndicator.innerText = "Multi-Shift Active";
-                autoDetectIndicator.className = "text-xs text-emerald-400 font-semibold";
-            } else {
-                autoDetectIndicator.innerText = "Manual tune active";
-                autoDetectIndicator.className = "text-xs text-amber-500 font-semibold";
-            }
+            isAutoMode = false;
             updateDecryption();
         });
 
         autoDetectBtn.addEventListener('click', () => {
-            const detection = detectOptimalShift(encodedInput.value);
-            shiftSlider.value = detection.shift;
-            autoDetectIndicator.innerText = `Matched shift ${detection.shift >= 0 ? '+' : ''}${detection.shift} (Confidence: ${detection.confidence})`;
-            autoDetectIndicator.className = "text-xs text-emerald-400 font-semibold";
+            isAutoMode = true;
             updateDecryption();
         });
 
         saveLogBtn.addEventListener('click', () => {
             const raw = encodedInput.value.trim();
             const decoded = decodedOutput.innerText.trim();
-            const shift = parseInt(shiftSlider.value);
+            const shift = isAutoMode ? "Auto" : parseInt(shiftSlider.value);
             if (raw && decoded) {
                 writeLogToCache(raw, decoded, shift);
             }
