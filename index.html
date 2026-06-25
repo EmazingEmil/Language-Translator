@@ -194,7 +194,7 @@ Duuaduquxaaevaka fava vamu saidu rihakaduri</textarea>
                     </div>
                 </div>
                 
-                <div id="decoded-output" class="text-xl tracking-wide font-semibold text-emerald-300 min-h-[64px] bg-slate-950/50 border border-emerald-950 rounded-lg p-4 flex flex-col justify-center transition-all uppercase leading-relaxed font-mono whitespace-pre-line text-left">
+                <div id="decoded-output" class="text-xl tracking-wide font-semibold text-emerald-300 min-h-[64px] bg-slate-950/50 border border-emerald-950 rounded-lg p-4 flex items-center justify-center transition-all uppercase leading-relaxed font-mono whitespace-pre-line text-left">
                 </div>
                 
                 <div class="flex items-center gap-2 text-xs text-slate-500 border-t border-slate-800/80 pt-3 italic">
@@ -745,7 +745,8 @@ Duuaduquxaaevaka fava vamu saidu rihakaduri</textarea>
                                 text: "You are a professional cryptanalyst and OCR scanner. Analyze this game screenshot. " +
                                       "Identify and extract ONLY the text colored in light blue or cyan (which is the actual chat message). " +
                                       "Ignore white text, usernames (e.g., 'Lawful:', 'Suny:', etc. which are in different colors), and timestamps.\n\n" +
-                                      "Return ONLY the exact raw extracted text as a single string of space-separated words, preserving their capitalizations. " +
+                                      "CRITICAL: If there are multiple cyan/blue chat lines, you MUST transcribe each distinct chat message on its own separate line using a newline character (\\n). Do NOT combine multiple messages into one line.\n\n" +
+                                      "Return ONLY the exact raw extracted text as lines of space-separated words, preserving their capitalizations. " +
                                       "Do not include markdown formatting, code blocks, explanations, or commentary."
                             },
                             {
@@ -768,7 +769,7 @@ Duuaduquxaaevaka fava vamu saidu rihakaduri</textarea>
 
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
                 if (text) {
-                    const cleanedOutputText = text.replace(/[\r\n]+/g, ' ').trim();
+                    const cleanedOutputText = text.split('\n').map(line => line.trim()).filter(line => line.length > 0).join('\n');
                     encodedInput.value = cleanedOutputText;
                     
                     const detection = detectOptimalShift(cleanedOutputText);
