@@ -112,7 +112,9 @@
                         rows="3" 
                         class="code-font w-full bg-slate-950/80 border border-slate-800 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none text-cyan-300 text-sm leading-relaxed"
                         placeholder="Paste your encoded text here or drop an image below..."
-                    >Aqualis Duiisamuiisasaeidu</textarea>
+                    >Zuha quhahaga wari saxasha saiha saduoodufaha
+Saiisa piuasha
+Duuaduquxaaevaka fava vamu saidu rihakaduri</textarea>
                 </div>
 
                 <div class="flex flex-col gap-2">
@@ -140,26 +142,23 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950/40 border border-slate-800/50 p-4 rounded-lg">
                     <div class="flex flex-col gap-2">
                         <div class="flex justify-between items-center">
-                            <label class="text-xs text-slate-400 uppercase tracking-wider" for="shift-slider">Shift Value (N):</label>
-                            <span id="shift-badge" class="bg-blue-950 text-blue-300 text-xs px-2 py-0.5 rounded border border-blue-800 font-bold code-font">0</span>
+                            <label class="text-xs text-slate-400 uppercase tracking-wider" for="shift-slider">Global Override Shift (N):</label>
+                            <span id="shift-badge" class="bg-blue-950 text-blue-300 text-xs px-2 py-0.5 rounded border border-blue-800 font-bold code-font">Auto</span>
                         </div>
                         <input 
                             type="range" 
                             id="shift-slider" 
-                            min="-10" 
+                            min="-11" 
                             max="10" 
-                            value="0" 
+                            value="-11" 
                             class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
                         >
                     </div>
 
                     <div class="flex flex-col justify-center gap-1.5">
-                        <div class="text-xs text-slate-400 uppercase tracking-wider">Shift Finder:</div>
+                        <div class="text-xs text-slate-400 uppercase tracking-wider">Multi-Shift Detection:</div>
                         <div class="flex items-center gap-2">
-                            <button id="auto-detect-btn" class="bg-emerald-950 text-emerald-300 border border-emerald-800 text-xs px-3 py-1.5 rounded hover:bg-emerald-900 transition-all font-semibold uppercase tracking-wider flex items-center gap-1">
-                                🔍 Auto-Detect Shift
-                            </button>
-                            <span id="auto-detect-indicator" class="text-xs text-slate-500">Manual overridden</span>
+                            <span class="text-xs text-emerald-400 font-semibold bg-emerald-950/40 border border-emerald-900/50 px-2.5 py-1 rounded">Active Line-by-Line</span>
                         </div>
                     </div>
                 </div>
@@ -195,8 +194,7 @@
                     </div>
                 </div>
                 
-                <div id="decoded-output" class="text-xl tracking-wide font-semibold text-emerald-300 min-h-[64px] bg-slate-950/50 border border-emerald-950 rounded-lg p-4 flex items-center justify-start transition-all uppercase leading-relaxed">
-                    AQUALIS DISMISSED
+                <div id="decoded-output" class="text-xl tracking-wide font-semibold text-emerald-300 min-h-[64px] bg-slate-950/50 border border-emerald-950 rounded-lg p-4 flex flex-col justify-center transition-all uppercase leading-relaxed font-mono whitespace-pre-line text-left">
                 </div>
                 
                 <div class="flex items-center gap-2 text-xs text-slate-500 border-t border-slate-800/80 pt-3 italic">
@@ -289,10 +287,10 @@
         const TARGET_DICTIONARY = [
             'to', 'we', 'me', 'on', 'in', 'is', 'as', 'go', 'do', 'no',
             'need', 'the', 'palace', 'stop', 'push', 'fires', 'sides',
-            'everyone', 'possible', 'long', 'live', 'this', 'lag', 'bro',
-            'with', 'everybody', 'attack', 'attacking', 'lotus', 'single',
+            'everyone', 'everybody', 'possible', 'long', 'live', 'this', 'lag', 'bro',
+            'with', 'attack', 'attacking', 'lotus', 'single',
             'focus', 'purple', 'red', 'right', 'many', 'people', 'one', 'i',
-            'dismissed', 'aqualis'
+            'dismissed', 'aqualis', 'pfp'
         ];
 
         const TYPO_MAP = {
@@ -306,7 +304,8 @@
             'pupx': 'push',
             'saxasha': 'push',
             'piuasha': 'push',
-            'saiiisa': 'this',
+            'saiiisa': 'pfp',
+            'saiisa': 'pfp',
             'siis': 'this',
             'pf': 'the',
             'pfx': 'the',
@@ -325,6 +324,30 @@
         };
 
         let sessionLogs = [];
+
+        async function fetchWithRetry(url, options, maxRetries = 5) {
+            let delay = 1000;
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) {
+                        return await response.json();
+                    }
+                    let errMsg = `HTTP ${response.status}`;
+                    try {
+                        const errData = await response.json();
+                        if (errData.error && errData.error.message) {
+                            errMsg = errData.error.message;
+                        }
+                    } catch (_) {}
+                    throw new Error(errMsg);
+                } catch (e) {
+                    if (i === maxRetries - 1) throw e;
+                }
+                await new Promise(resolve => setTimeout(resolve, delay));
+                delay *= 2;
+            }
+        }
 
         function loadLogsFromCache() {
             try {
@@ -570,12 +593,39 @@
             const inputVal = encodedInput.value;
             const shiftVal = parseInt(shiftSlider.value);
             
-            shiftBadge.innerText = (shiftVal >= 0 ? '+' : '') + shiftVal;
+            const lines = inputVal.split('\n');
+            const decodedLines = [];
+            let allBreakdowns = [];
 
-            const { result, breakdown } = decodeSentence(inputVal, shiftVal);
-            decodedOutput.innerText = result || "";
+            if (shiftVal === -11) {
+                shiftBadge.innerText = "Auto (Multi)";
+                
+                lines.forEach(line => {
+                    if (!line.trim()) {
+                        decodedLines.push("");
+                        return;
+                    }
+                    const opt = detectOptimalShift(line);
+                    const { result, breakdown } = decodeSentence(line, opt.shift);
+                    decodedLines.push(result);
+                    allBreakdowns = allBreakdowns.concat(breakdown);
+                });
+            } else {
+                shiftBadge.innerText = (shiftVal >= 0 ? '+' : '') + shiftVal;
+                
+                lines.forEach(line => {
+                    if (!line.trim()) {
+                        decodedLines.push("");
+                        return;
+                    }
+                    const { result, breakdown } = decodeSentence(line, shiftVal);
+                    decodedLines.push(result);
+                    allBreakdowns = allBreakdowns.concat(breakdown);
+                });
+            }
 
-            renderBreakdown(breakdown, shiftVal);
+            decodedOutput.innerText = decodedLines.join('\n');
+            renderBreakdown(allBreakdowns, shiftVal);
         }
 
         function renderBreakdown(breakdown, shiftVal) {
@@ -631,7 +681,8 @@
 
                 if (item.steps && item.steps.length > 0) {
                     item.steps.forEach(step => {
-                        const mathString = shiftVal >= 0 ? `+ ${shiftVal}` : `- ${Math.abs(shiftVal)}`;
+                        const targetShift = (shiftVal === -11) ? detectOptimalShift(item.rawWord).shift : shiftVal;
+                        const mathString = targetShift >= 0 ? `+ ${targetShift}` : `- ${Math.abs(targetShift)}`;
                         
                         const itemRow = document.createElement('div');
                         itemRow.className = "flex items-center justify-between bg-slate-900/50 p-1.5 rounded text-xs border border-slate-850 font-mono";
@@ -678,30 +729,6 @@
 
                 analysisContainer.appendChild(wordBlock);
             });
-        }
-
-        async function fetchWithRetry(url, options, maxRetries = 5) {
-            let delay = 1000;
-            for (let i = 0; i < maxRetries; i++) {
-                try {
-                    const response = await fetch(url, options);
-                    if (response.ok) {
-                        return await response.json();
-                    }
-                    let errMsg = `HTTP ${response.status}`;
-                    try {
-                        const errData = await response.json();
-                        if (errData.error && errData.error.message) {
-                            errMsg = errData.error.message;
-                        }
-                    } catch (_) {}
-                    throw new Error(errMsg);
-                } catch (e) {
-                    if (i === maxRetries - 1) throw e;
-                }
-                await new Promise(resolve => setTimeout(resolve, delay));
-                delay *= 2;
-            }
         }
 
         async function analyzeImage(base64Data, mimeType) {
@@ -844,7 +871,9 @@
         encodedInput.addEventListener('input', () => {
             const detection = detectOptimalShift(encodedInput.value);
             if (detection.confidence > 0) {
-                shiftSlider.value = detection.shift;
+                if (parseInt(shiftSlider.value) !== -11) {
+                    shiftSlider.value = detection.shift;
+                }
                 autoDetectIndicator.innerText = `Auto-Selected (Confidence: ${detection.confidence})`;
                 autoDetectIndicator.className = "text-xs text-emerald-400 font-semibold";
             } else {
@@ -855,8 +884,13 @@
         });
 
         shiftSlider.addEventListener('input', () => {
-            autoDetectIndicator.innerText = "Manual tune active";
-            autoDetectIndicator.className = "text-xs text-amber-500 font-semibold";
+            if (parseInt(shiftSlider.value) === -11) {
+                autoDetectIndicator.innerText = "Multi-Shift Active";
+                autoDetectIndicator.className = "text-xs text-emerald-400 font-semibold";
+            } else {
+                autoDetectIndicator.innerText = "Manual tune active";
+                autoDetectIndicator.className = "text-xs text-amber-500 font-semibold";
+            }
             updateDecryption();
         });
 
@@ -911,6 +945,7 @@
                 copyBtn.className = "text-xs text-emerald-400 hover:text-emerald-300 transition-colors py-1 px-2.5 bg-emerald-950/40 border border-emerald-900/50 rounded-md";
             }, 1500);
         });
+
         window.addEventListener('DOMContentLoaded', () => {
             loadLogsFromCache();
             updateDecryption();
