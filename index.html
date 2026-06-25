@@ -112,7 +112,7 @@
                         rows="3" 
                         class="code-font w-full bg-slate-950/80 border border-slate-800 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none text-cyan-300 text-sm leading-relaxed"
                         placeholder="Paste your encoded text here or drop an image below..."
-                    >Aqualis Duiisamuiisasaeidu</textarea>
+                    ></textarea>
                 </div>
 
                 <div class="flex flex-col gap-2">
@@ -161,6 +161,16 @@
                             </button>
                             <span id="auto-detect-indicator" class="text-xs text-slate-500">Manual overridden</span>
                         </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950/40 border border-slate-800/50 p-4 rounded-lg flex flex-col gap-3">
+                    <div class="flex justify-between items-center">
+                        <div class="text-xs text-slate-400 uppercase tracking-wider">Top 5 Shift Candidates:</div>
+                        <span id="shift-confidence-badge" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 text-slate-400 uppercase">Awaiting Input</span>
+                    </div>
+                    <div id="shift-candidates-list" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+                        <p class="text-xs text-slate-500 italic">Type or scan a message to generate shift alternatives.</p>
                     </div>
                 </div>
 
@@ -265,6 +275,8 @@
         const copyBtn = document.getElementById('copy-btn');
         const autoDetectBtn = document.getElementById('auto-detect-btn');
         const autoDetectIndicator = document.getElementById('auto-detect-indicator');
+        const shiftCandidatesList = document.getElementById('shift-candidates-list');
+        const shiftConfidenceBadge = document.getElementById('shift-confidence-badge');
         const analysisContainer = document.getElementById('analysis-container');
         const dropZone = document.getElementById('drop-zone');
         const fileInput = document.getElementById('file-input');
@@ -296,7 +308,7 @@
             'everyone', 'possible', 'long', 'live', 'this', 'lag', 'bro',
             'with', 'everybody', 'attack', 'attacking', 'lotus', 'single',
             'focus', 'purple', 'red', 'right', 'many', 'people', 'one', 'i',
-            'dismissed', 'aqualis'
+            'dismissed', 'aqualis', 'aurelic', 'speak', 'speaka', 'says', 'said', 'wait'
         ];
 
         const TYPO_MAP = {
@@ -325,7 +337,9 @@
             'wi': 'with',
             'wirh': 'with',
             'siles': 'sides',
-            'uany': 'many'
+            'uany': 'many',
+            'aurelik': 'aurelic',
+            'spak': 'speak'
         };
 
         const RATE_LIMIT_PATTERNS = [
@@ -550,6 +564,11 @@
             if (toggleSpaceFix.checked) {
                 if (lower === 'x') choices.push(isUpper ? 'W' : 'w');
                 if (lower === 'p') choices.push(isUpper ? 'O' : 'o');
+                if (lower === 'v') {
+                    choices.push(isUpper ? 'W' : 'w');
+                    choices.push(isUpper ? 'U' : 'u');
+                    choices.push(isUpper ? 'T' : 't');
+                }
             }
 
             return [...new Set(choices)];
@@ -701,30 +720,142 @@
         }
 
         function detectOptimalShift(text) {
-            let bestShift = 0;
-            let highestMatchCount = -1;
-
-            for (let shift = -12; shift <= 12; shift++) {
-                const { result } = decodeSentence(text, shift);
-                const decodedWords = cleanString(result).split(/\s+/);
-
-                let matches = 0;
-                decodedWords.forEach(word => {
-                    if (TARGET_DICTIONARY.includes(word) || Object.values(TYPO_MAP).includes(word)) {
-                        matches++;
-                    }
-                });
-
-                if (matches > highestMatchCount) {
-                    highestMatchCount = matches;
-                    bestShift = shift;
-                }
+            const topCandidates = detectTopShiftCandidates(text, 1);
+            if (topCandidates.length === 0 || topCandidates[0].matches <= 0) {
+                return {
+                    shift: 0,
+                    confidence: 0
+                };
             }
 
             return {
-                shift: bestShift,
-                confidence: highestMatchCount
+                shift: topCandidates[0].shift,
+                confidence: topCandidates[0].matches
             };
+        }
+
+        function scoreShift(text, shift) {
+            const { result } = decodeSentence(text, shift);
+            const decodedWords = cleanString(result).split(/\s+/).filter(Boolean);
+
+            let score = 0;
+            
+            const commonChars = ['e', 't', 'a', 'o', 'i', 'n', 's', 'h', 'r', 'd', 'l', 'u'];
+            const rareChars = ['z', 'q', 'x', 'j', 'k', 'v', 'b', 'p'];
+            const commonNgrams = ['th', 'he', 'in', 'er', 'an', 're', 'nd', 'at', 'on', 'nt', 'ha', 'es', 'st', 'en', 'ed', 'to', 'it', 'ou', 'ea', 'hi', 'is', 'or', 'ti', 'as', 'te', 'et', 'ng', 'of', 'al', 'de', 'se', 'le', 'sa', 'si', 'ar', 've', 'ra', 'ro', 'fi', 'the', 'and', 'ing', 'ent', 'ion', 'her', 'for', 'tha', 'nth', 'int', 'ere', 'tio', 'ter', 'est', 'ers', 'ati', 'hat', 'ate', 'all', 'eth', 'hes', 'ith'];
+            
+            decodedWords.forEach(word => {
+                let wordScore = 0;
+                const len = word.length;
+                
+                const vowelMatch = word.match(/[aeiouy]/g);
+                const vowelCount = vowelMatch ? vowelMatch.length : 0;
+                
+                if (len > 1 && vowelCount === 0) {
+                    wordScore -= 2;
+                } else if (vowelCount > 0) {
+                    wordScore += 0.5;
+                }
+                
+                if (/[bcdfghjklmnpqrstvwxz]{4,}/.test(word)) {
+                    wordScore -= 2;
+                }
+                
+                for (let i = 0; i < len; i++) {
+                    const c = word[i];
+                    if (commonChars.includes(c)) wordScore += 0.1;
+                    if (rareChars.includes(c)) wordScore -= 0.2;
+                }
+                
+                for (let i = 0; i < len - 1; i++) {
+                    if (commonNgrams.includes(word.substring(i, i+2))) wordScore += 0.3;
+                }
+                for (let i = 0; i < len - 2; i++) {
+                    if (commonNgrams.includes(word.substring(i, i+3))) wordScore += 0.5;
+                }
+                
+                if (TARGET_DICTIONARY.includes(word) || Object.values(TYPO_MAP).includes(word)) {
+                    wordScore += 5;
+                }
+                
+                score += wordScore;
+            });
+
+            return {
+                shift,
+                matches: Math.round(score * 10) / 10,
+                preview: result
+            };
+        }
+
+        function detectTopShiftCandidates(text, limit = 5) {
+            const trimmedText = text.trim();
+            if (!trimmedText) return [];
+
+            const allCandidates = [];
+            for (let shift = -25; shift <= 25; shift++) {
+                allCandidates.push(scoreShift(trimmedText, shift));
+            }
+
+            allCandidates.sort((a, b) => {
+                if (b.matches !== a.matches) return b.matches - a.matches;
+                if (Math.abs(a.shift) !== Math.abs(b.shift)) return Math.abs(a.shift) - Math.abs(b.shift);
+                return a.shift - b.shift;
+            });
+
+            return allCandidates.slice(0, limit);
+        }
+
+        function renderShiftCandidates(text, currentShift) {
+            const trimmedText = text.trim();
+
+            if (!trimmedText) {
+                shiftCandidatesList.innerHTML = `<p class="text-xs text-slate-500 italic">Type or scan a message to generate shift alternatives.</p>`;
+                shiftConfidenceBadge.innerText = 'Awaiting Input';
+                shiftConfidenceBadge.className = 'text-[10px] px-2 py-0.5 rounded border border-slate-700 text-slate-400 uppercase';
+                return;
+            }
+
+            const candidates = detectTopShiftCandidates(trimmedText, 5);
+            const topConfidence = candidates.length > 0 ? candidates[0].matches : 0;
+
+            if (topConfidence > 0) {
+                shiftConfidenceBadge.innerText = `Confidence ${topConfidence}`;
+                shiftConfidenceBadge.className = 'text-[10px] px-2 py-0.5 rounded border border-emerald-800 text-emerald-300 bg-emerald-950/40 uppercase';
+            } else {
+                shiftConfidenceBadge.innerText = 'Low Confidence';
+                shiftConfidenceBadge.className = 'text-[10px] px-2 py-0.5 rounded border border-amber-800 text-amber-300 bg-amber-950/40 uppercase';
+            }
+
+            shiftCandidatesList.innerHTML = '';
+
+            candidates.forEach(candidate => {
+                const candidateBtn = document.createElement('button');
+                const isActive = candidate.shift === currentShift;
+                candidateBtn.type = 'button';
+                candidateBtn.className = isActive
+                    ? 'text-left bg-blue-950/40 border border-blue-700 rounded p-2 transition-all'
+                    : 'text-left bg-slate-900/60 border border-slate-800 rounded p-2 hover:border-slate-700 transition-all';
+
+                const shortPreview = candidate.preview.length > 32 ? `${candidate.preview.slice(0, 32)}...` : candidate.preview;
+
+                candidateBtn.innerHTML = `
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold ${isActive ? 'text-blue-300' : 'text-slate-300'}">Shift ${candidate.shift >= 0 ? '+' : ''}${candidate.shift}</span>
+                        <span class="${candidate.matches > 0 ? 'text-emerald-400' : 'text-slate-500'}">Score: ${candidate.matches}</span>
+                    </div>
+                    <div class="text-[10px] mt-1 ${isActive ? 'text-blue-200' : 'text-slate-400'} truncate">${shortPreview || '(empty decode)'}</div>
+                `;
+
+                candidateBtn.addEventListener('click', () => {
+                    shiftSlider.value = candidate.shift;
+                    autoDetectIndicator.innerText = `Candidate shift ${candidate.shift >= 0 ? '+' : ''}${candidate.shift} selected`;
+                    autoDetectIndicator.className = 'text-xs text-blue-400 font-semibold';
+                    updateDecryption();
+                });
+
+                shiftCandidatesList.appendChild(candidateBtn);
+            });
         }
 
         function updateDecryption() {
@@ -737,6 +868,7 @@
             decodedOutput.innerText = result || "";
 
             renderBreakdown(breakdown, shiftVal);
+            renderShiftCandidates(inputVal, shiftVal);
         }
 
         function renderBreakdown(breakdown, shiftVal) {
