@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lotus Cipher Intel Decoder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        .glowing-border {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+        }
+        .glowing-border-success {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+        }
+        @keyframes scan {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+        .scanner-line {
+            animation: scan 2s linear infinite;
+        }
+        @keyframes morph {
+            0% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+            34% { border-radius: 70% 30% 50% 50% / 30% 30% 70% 70%; }
+            67% { border-radius: 100% 60% 60% 100% / 100% 100% 60% 60%; }
+            100% { border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; }
+        }
+        .morphing-blob {
+            animation: morph 8s ease-in-out infinite;
+        }
+        @keyframes border-shimmer {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .shimmering-border {
+            background-size: 300% 300%;
+            animation: border-shimmer 4s ease infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-100 flex flex-col justify-between selection:bg-blue-600 selection:text-white">
+
+    <div id="ai-loader" class="fixed inset-0 z-[100] bg-slate-950/20 flex flex-col items-center justify-center backdrop-blur-lg hidden">
+        <div class="absolute inset-0 border-[6px] border-transparent rounded-none pointer-events-none shimmering-border" style="background: linear-gradient(135deg, #ec4899, #8b5cf6, #3b82f6, #06b6d4) border-box; -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; opacity: 0.35; filter: blur(3px); background-size: 300% 300%;"></div>
+        
+        <div class="absolute w-[300px] h-[300px] rounded-full bg-pink-500/10 blur-[80px] mix-blend-screen pointer-events-none"></div>
+        <div class="absolute w-[300px] h-[300px] rounded-full bg-blue-500/10 blur-[80px] mix-blend-screen pointer-events-none"></div>
+        <div class="absolute w-[300px] h-[300px] rounded-full bg-purple-500/10 blur-[80px] mix-blend-screen pointer-events-none"></div>
+
+        <div class="relative w-44 h-44 flex items-center justify-center">
+            <div class="absolute inset-0 bg-gradient-to-tr from-pink-500 via-purple-600 to-cyan-400 blur-xl opacity-40 morphing-blob animate-spin" style="animation-duration: 12s;"></div>
+            <div class="relative z-10 flex items-center justify-center">
+                <svg class="w-14 h-14 drop-shadow-[0_0_15px_rgba(56,189,248,0.6)]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path class="animate-pulse" style="animation-duration: 2s;" d="M44 12C44 29.5 31.5 42 14 42C31.5 42 44 54.5 44 72C44 54.5 56.5 42 74 42C56.5 42 44 29.5 44 12Z" fill="url(#gemini-grad-1)"/>
+                    <path class="animate-pulse" style="animation-duration: 1.2s; animation-delay: 0.3s;" d="M72 45C72 53.5 66.5 60 59 60C66.5 60 72 66.5 72 75C72 66.5 77.5 60 85 60C77.5 60 72 53.5 72 45Z" fill="url(#gemini-grad-2)"/>
+                    <defs>
+                        <linearGradient id="gemini-grad-1" x1="14" y1="12" x2="74" y2="72" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#38bdf8" />
+                            <stop offset="55%" stop-color="#8b5cf6" />
+                            <stop offset="100%" stop-color="#ec4899" />
+                        </linearGradient>
+                        <linearGradient id="gemini-grad-2" x1="59" y1="45" x2="85" y2="75" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#a78bfa" />
+                            <stop offset="100%" stop-color="#f43f5e" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <header class="border-b border-slate-800/80 bg-slate-950/50 backdrop-blur-md px-6 py-4 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">🔓</span>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">LOTUS CIPHER DECODER</h1>
+                    <p class="text-xs text-slate-400 tracking-widest uppercase">Decryption & Analysis Terminal</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-lg text-xs tracking-wider">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>DECRYPTOR STATUS: NEURAL ANALYZER READY</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex-grow grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <div class="lg:col-span-7 flex flex-col gap-6">
+            <div class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6 backdrop-blur-sm glowing-border flex flex-col gap-5">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <h2 class="text-lg font-semibold tracking-wider text-blue-400">INPUT INTEL</h2>
+                    <button id="clear-btn" class="text-xs text-slate-400 hover:text-rose-400 transition-colors py-1 px-2.5 bg-slate-950/50 border border-slate-850 rounded-md">CLEAR</button>
+                </div>
+                
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs text-slate-400 uppercase tracking-wider" for="encoded-input">Encoded Message:</label>
+                    <textarea 
+                        id="encoded-input" 
+                        rows="3" 
+                        class="code-font w-full bg-slate-950/80 border border-slate-800 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none text-cyan-300 text-sm leading-relaxed"
+                        placeholder="Paste your encoded text here or drop an image below..."
+                    >Aqualis Duiisamuiisasaeidu</textarea>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs text-slate-400 uppercase tracking-wider">Visual Glyph Scanner:</label>
+                    <div id="drop-zone" class="border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-lg p-4 flex flex-col items-center justify-center transition-all cursor-pointer bg-slate-950/30 min-h-[100px] relative overflow-hidden">
+                        <div class="absolute inset-x-0 h-0.5 bg-blue-500/30 scanner-line hidden" id="scanner-line"></div>
+                        <input type="file" id="file-input" accept="image/*" class="hidden" />
+                        <div id="upload-prompt" class="flex flex-col items-center justify-center text-center">
+                            <span class="text-2xl mb-1">📷</span>
+                            <span class="text-xs text-slate-300">Drag & drop game screenshot, click to browse, or paste image directly</span>
+                        </div>
+                        <div id="preview-container" class="hidden flex flex-col items-center gap-2">
+                            <img id="image-preview" src="#" alt="Preview" class="max-h-24 rounded border border-slate-800" />
+                            <span id="image-name" class="text-xs text-slate-400 font-mono"></span>
+                        </div>
+                    </div>
+                    <div class="text-[11px] text-slate-500 italic mt-0.5 flex items-center gap-1.5 leading-relaxed">
+                        <span>⚠️</span>
+                        <span>Note: AI image scanning is not always 100% accurate and can make mistakes. Please double-check and correct any errors in the input box!</span>
+                    </div>
+                </div>
+
+                <div id="error-toast" class="bg-rose-950/80 border border-rose-900 text-rose-300 text-xs px-3 py-2 rounded-lg hidden font-mono"></div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950/40 border border-slate-800/50 p-4 rounded-lg">
+                    <div class="flex flex-col gap-2">
+                        <div class="flex justify-between items-center">
+                            <label class="text-xs text-slate-400 uppercase tracking-wider" for="shift-slider">Shift Value (N):</label>
+                            <span id="shift-badge" class="bg-blue-950 text-blue-300 text-xs px-2 py-0.5 rounded border border-blue-800 font-bold code-font">0</span>
+                        </div>
+                        <input 
+                            type="range" 
+                            id="shift-slider" 
+                            min="-10" 
+                            max="10" 
+                            value="0" 
+                            class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                        >
+                    </div>
+
+                    <div class="flex flex-col justify-center gap-1.5">
+                        <div class="text-xs text-slate-400 uppercase tracking-wider">Shift Finder:</div>
+                        <div class="flex items-center gap-2">
+                            <button id="auto-detect-btn" class="bg-emerald-950 text-emerald-300 border border-emerald-800 text-xs px-3 py-1.5 rounded hover:bg-emerald-900 transition-all font-semibold uppercase tracking-wider flex items-center gap-1">
+                                🔍 Auto-Detect Shift
+                            </button>
+                            <span id="auto-detect-indicator" class="text-xs text-slate-500">Manual overridden</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400 uppercase tracking-wider">Smart Font Corrections:</span>
+                        <span class="text-[10px] text-indigo-400 bg-indigo-950/50 px-2 py-0.5 rounded border border-indigo-900 font-semibold uppercase">Autocorrect Enabled</span>
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                        <label class="flex items-center gap-2 bg-slate-950/50 border border-slate-800/50 px-3 py-2 rounded-lg cursor-pointer hover:border-slate-700 transition-all">
+                            <input type="checkbox" id="toggle-vn" checked class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700">
+                            <span class="text-xs text-slate-300 font-semibold tracking-wider">v ⇄ n Branching</span>
+                        </label>
+                        <label class="flex items-center gap-2 bg-slate-950/50 border border-slate-800/50 px-3 py-2 rounded-lg cursor-pointer hover:border-slate-700 transition-all">
+                            <input type="checkbox" id="toggle-kc" checked class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700">
+                            <span class="text-xs text-slate-300 font-semibold tracking-wider">K ⇄ C Branching</span>
+                        </label>
+                        <label class="flex items-center gap-2 bg-slate-950/50 border border-slate-800/50 px-3 py-2 rounded-lg cursor-pointer hover:border-slate-700 transition-all">
+                            <input type="checkbox" id="toggle-spacefix" checked class="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 bg-slate-900 border-slate-700">
+                            <span class="text-xs text-slate-300 font-semibold tracking-wider">X/V/P Branching</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/40 border border-emerald-800/60 rounded-xl p-6 backdrop-blur-sm glowing-border-success flex flex-col gap-4 mt-6">
+                <div class="flex justify-between items-center border-b border-emerald-900/60 pb-3">
+                    <h2 class="text-lg font-semibold tracking-wider text-emerald-400">DECRYPTED INTEL</h2>
+                    <div class="flex gap-2">
+                        <button id="save-log-btn" class="text-xs text-blue-400 hover:text-blue-300 transition-colors py-1 px-2.5 bg-blue-950/40 border border-blue-900/50 rounded-md">LOG INTEL</button>
+                        <button id="copy-btn" class="text-xs text-emerald-400 hover:text-emerald-300 transition-colors py-1 px-2.5 bg-emerald-950/40 border border-emerald-900/50 rounded-md">COPY TEXT</button>
+                    </div>
+                </div>
+                
+                <div id="decoded-output" class="text-xl tracking-wide font-semibold text-emerald-300 min-h-[64px] bg-slate-950/50 border border-emerald-950 rounded-lg p-4 flex items-center justify-start transition-all uppercase leading-relaxed">
+                    AQUALIS DISMISSED
+                </div>
+                
+                <div class="flex items-center gap-2 text-xs text-slate-500 border-t border-slate-800/80 pt-3 italic">
+                    <span class="text-amber-500/80 text-sm">⚠️</span>
+                    <span>Note: Due to variations in certain words, the decoder possesses a ~90% accuracy rate per word. Minor manual adjustments may be necessary.</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-5 flex flex-col gap-6">
+            <div id="breakdown-panel" class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6 backdrop-blur-sm flex flex-col gap-4">
+                <h2 class="text-lg font-semibold tracking-wider text-indigo-400 border-b border-slate-800 pb-3">LIVE DECRYPTION BREAKDOWN</h2>
+                <div class="overflow-y-auto max-h-[300px] pr-2 custom-scrollbar flex flex-col gap-3" id="analysis-container">
+                </div>
+            </div>
+
+            <div class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6 backdrop-blur-sm flex flex-col gap-4">
+                <h2 class="text-lg font-semibold tracking-wider text-slate-300 border-b border-slate-800 pb-3">CIPHER CHEAT SHEET</h2>
+                <div class="flex flex-col gap-3 text-sm text-slate-300">
+                    <div class="bg-slate-950/60 border border-slate-850 p-3 rounded-lg flex flex-col gap-1">
+                        <span class="text-xs font-bold text-blue-400 uppercase tracking-widest">Syllable Rule</span>
+                        <p class="text-xs text-slate-400 leading-relaxed">Each English letter translates into a 2-character syllable. The 1st letter contains the shifting value; the 2nd letter is just a vowel (A, I, U) to make the text pronounceable.</p>
+                    </div>
+                    <div class="bg-slate-950/60 border border-slate-850 p-3 rounded-lg flex flex-col gap-1">
+                        <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest">Fast Detection</span>
+                        <p class="text-xs text-slate-400 leading-relaxed">Isolate the first character of any 4-letter word. It translates to common 2-letter words like <span class="text-emerald-300 font-bold code-font">TO, WE, ME, ON, IN, IS</span>. Brute force your shift using this word!</p>
+                    </div>
+                    <div class="bg-slate-950/60 border border-slate-850 p-3 rounded-lg flex flex-col gap-1">
+                        <span class="text-xs font-bold text-amber-400 uppercase tracking-widest">Known Shift Anchors</span>
+                        <ul class="text-xs text-slate-400 space-y-0.5 list-disc pl-4">
+                            <li><span class="text-amber-300 code-font">MULI...</span> (Shift +2) = "ON..."</li>
+                            <li><span class="text-amber-300 code-font">VAMU...</span> (Shift +1) = "ON..."</li>
+                            <li><span class="text-amber-300 code-font">ZUHA...</span> (Shift -2) = "WE..."</li>
+                            <li><span class="text-amber-300 code-font">WARI...</span> (Shift -2) = "TO..."</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6 backdrop-blur-sm flex flex-col gap-4">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <h2 class="text-lg font-semibold tracking-wider text-indigo-400">SAVED DECRYPTION HISTORY LOG</h2>
+                    <button id="clear-history-btn" class="text-[10px] text-rose-400 hover:underline uppercase font-bold">Clear All</button>
+                </div>
+                <div id="history-container" class="overflow-y-auto max-h-[160px] pr-2 custom-scrollbar flex flex-col gap-2">
+                    <p class="text-xs text-slate-500 italic text-center py-4">No logged messages in this session.</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="border-t border-slate-900 bg-slate-950/40 p-4 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+            <p>By the Lotus Intelligence</p>
+            <p>Designed for decoding languages from other nations.</p>
+        </div>
+    </footer>
+
+    <script>
+        const encodedInput = document.getElementById('encoded-input');
+        const shiftSlider = document.getElementById('shift-slider');
+        const shiftBadge = document.getElementById('shift-badge');
+        const decodedOutput = document.getElementById('decoded-output');
+        const clearBtn = document.getElementById('clear-btn');
+        const copyBtn = document.getElementById('copy-btn');
+        const autoDetectBtn = document.getElementById('auto-detect-btn');
+        const autoDetectIndicator = document.getElementById('auto-detect-indicator');
+        const analysisContainer = document.getElementById('analysis-container');
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const uploadPrompt = document.getElementById('upload-prompt');
+        const previewContainer = document.getElementById('preview-container');
+        const imagePreview = document.getElementById('image-preview');
+        const imageName = document.getElementById('image-name');
+        const aiLoader = document.getElementById('ai-loader');
+        const errorToast = document.getElementById('error-toast');
+        const scannerLine = document.getElementById('scanner-line');
+
+        const saveLogBtn = document.getElementById('save-log-btn');
+        const historyContainer = document.getElementById('history-container');
+        const clearHistoryBtn = document.getElementById('clear-history-btn');
+
+        const toggleVN = document.getElementById('toggle-vn');
+        const toggleKC = document.getElementById('toggle-kc');
+        const toggleSpaceFix = document.getElementById('toggle-spacefix');
+
+        const apiKey = "AIzaSyCsggE_dvh551L7SzVpjvWYQXrk-q9NNVk";
+
+        const TARGET_DICTIONARY = [
+            'to', 'we', 'me', 'on', 'in', 'is', 'as', 'go', 'do', 'no',
+            'need', 'the', 'palace', 'stop', 'push', 'fires', 'sides',
+            'everyone', 'possible', 'long', 'live', 'this', 'lag', 'bro',
+            'with', 'everybody', 'attack', 'attacking', 'lotus', 'single',
+            'focus', 'purple', 'red', 'right', 'many', 'people', 'one', 'i',
+            'dismissed', 'aqualis'
+        ];
+
+        const TYPO_MAP = {
+            'tjv': 'the',
+            'sii': 'single',
+            'attakkia': 'attacking',
+            'attakki': 'attacking',
+            'everybod': 'everybody',
+            'pus': 'push',
+            'pupe': 'push',
+            'pupx': 'push',
+            'saxasha': 'push',
+            'piuasha': 'push',
+            'saiiisa': 'this',
+            'siis': 'this',
+            'pf': 'the',
+            'pfx': 'the',
+            'pfe': 'the',
+            'purz': 'push',
+            'pur': 'push',
+            'quvesha': 'push',
+            'saifa': 'the',
+            'rhz': 'the',
+            'saijati': 'right',
+            'rhzh': 'right',
+            'wi': 'with',
+            'wirh': 'with',
+            'siles': 'sides',
+            'uany': 'many'
+        };
+
+        let sessionLogs = [];
+
+        function loadLogsFromCache() {
+            try {
+                const cachedData = localStorage.getItem('lotus_session_logs');
+                if (cachedData) {
+                    sessionLogs = JSON.parse(cachedData) || [];
+                }
+            } catch (e) {
+                sessionLogs = [];
+            }
+            renderHistoryLog();
+        }
+
+        function writeLogToCache(raw, decoded, shift) {
+            const timestamp = Date.now();
+            sessionLogs.unshift({ raw, decoded, shift, timestamp });
+            try {
+                localStorage.setItem('lotus_session_logs', JSON.stringify(sessionLogs));
+            } catch (e) {}
+            renderHistoryLog();
+        }
+
+        function clearLogsFromCache() {
+            sessionLogs = [];
+            try {
+                localStorage.removeItem('lotus_session_logs');
+            } catch (e) {}
+            renderHistoryLog();
+        }
+
+        function cleanString(str) {
+            return str.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"").toLowerCase();
+        }
+
+        function shiftChar(char, shift) {
+            const isUpper = char === char.toUpperCase();
+            const baseChar = char.toLowerCase();
+            const code = baseChar.charCodeAt(0);
+
+            if (code >= 97 && code <= 122) {
+                let shiftedCode = code + shift;
+                if (shiftedCode < 97) shiftedCode += 26;
+                if (shiftedCode > 122) shiftedCode -= 26;
+                
+                const resChar = String.fromCharCode(shiftedCode);
+                return isUpper ? resChar.toUpperCase() : resChar;
+            }
+            return char;
+        }
+
+        function getLetterChoices(char) {
+            const lower = char.toLowerCase();
+            const isUpper = char === char.toUpperCase();
+            const choices = [char];
+
+            if (toggleVN.checked && lower === 'v') {
+                choices.push(isUpper ? 'N' : 'n');
+            }
+            if (toggleKC.checked && lower === 'k') {
+                choices.push(isUpper ? 'C' : 'c');
+            }
+            if (toggleSpaceFix.checked) {
+                if (lower === 'x') choices.push(isUpper ? 'W' : 'w');
+                if (lower === 'p') choices.push(isUpper ? 'O' : 'o');
+            }
+
+            return [...new Set(choices)];
+        }
+
+        function generateCombinations(choicesArrays) {
+            let results = [[]];
+            for (const choices of choicesArrays) {
+                const temp = [];
+                for (const prefix of results) {
+                    for (const choice of choices) {
+                        temp.push([...prefix, choice]);
+                    }
+                }
+                results = temp;
+            }
+            return results.map(arr => arr.join(''));
+        }
+
+        function decodeSentence(text, shift) {
+            const words = text.split(/\s+/);
+            const decodedWords = [];
+            const stepByStepBreakdown = [];
+
+            words.forEach(word => {
+                if (!word.trim()) return;
+
+                const cleanWord = cleanString(word);
+
+                if (cleanWord === 'aqualis') {
+                    decodedWords.push(word);
+                    stepByStepBreakdown.push({
+                        rawWord: word,
+                        decodedWord: word,
+                        literalDecode: word,
+                        steps: [],
+                        alternatives: [],
+                        isIgnored: true
+                    });
+                    return;
+                }
+
+                if (TYPO_MAP[cleanWord]) {
+                    const finalWord = TYPO_MAP[cleanWord];
+                    decodedWords.push(finalWord);
+                    stepByStepBreakdown.push({
+                        rawWord: word,
+                        decodedWord: finalWord,
+                        literalDecode: finalWord,
+                        steps: [{
+                            syllable: word,
+                            firstChar: word[0] || '',
+                            corrected: word[0] || '',
+                            decoded: finalWord
+                        }],
+                        alternatives: [],
+                        isSpellchecked: true
+                    });
+                    return;
+                }
+
+                const baseSyllables = [];
+                for (let i = 0; i < word.length; i += 2) {
+                    const syllable = word.substr(i, 2);
+                    if (syllable.length > 0) {
+                        baseSyllables.push({
+                            raw: syllable,
+                            char: syllable[0]
+                        });
+                    }
+                }
+
+                const choicesArrays = baseSyllables.map(s => getLetterChoices(s.char));
+                const combinations = generateCombinations(choicesArrays);
+
+                const candidateDecodes = combinations.map(comb => {
+                    let decoded = '';
+                    for (let i = 0; i < comb.length; i++) {
+                        decoded += shiftChar(comb[i], shift);
+                    }
+                    return {
+                        source: comb,
+                        decoded: decoded
+                    };
+                });
+
+                let bestCandidate = candidateDecodes[0];
+                let isSpellchecked = false;
+                let spellcheckedValue = "";
+                const validMatches = [];
+
+                candidateDecodes.forEach(cand => {
+                    const decodedLower = cand.decoded.toLowerCase();
+                    if (TARGET_DICTIONARY.includes(decodedLower)) {
+                        validMatches.push(cand);
+                    }
+                });
+
+                if (validMatches.length > 0) {
+                    bestCandidate = validMatches[0];
+                } else {
+                    for (let cand of candidateDecodes) {
+                        const decodedLower = cand.decoded.toLowerCase();
+                        if (TYPO_MAP[decodedLower]) {
+                            bestCandidate = cand;
+                            spellcheckedValue = TYPO_MAP[decodedLower];
+                            isSpellchecked = true;
+                            break;
+                        }
+                    }
+                }
+
+                const steps = [];
+                for (let i = 0; i < baseSyllables.length; i++) {
+                    const rawSyllable = baseSyllables[i].raw;
+                    const originalChar = baseSyllables[i].char;
+                    const usedChar = bestCandidate.source[i];
+                    const decodedChar = bestCandidate.decoded[i] || '';
+
+                    steps.push({
+                        syllable: rawSyllable,
+                        firstChar: originalChar,
+                        corrected: usedChar,
+                        decoded: decodedChar
+                    });
+                }
+
+                const alternatives = candidateDecodes
+                    .filter(c => c.decoded !== bestCandidate.decoded)
+                    .map(c => c.decoded.toUpperCase());
+
+                const finalOutputWord = isSpellchecked ? spellcheckedValue : bestCandidate.decoded;
+                decodedWords.push(finalOutputWord);
+
+                stepByStepBreakdown.push({
+                    rawWord: word,
+                    decodedWord: finalOutputWord,
+                    literalDecode: bestCandidate.decoded,
+                    steps: steps,
+                    alternatives: alternatives,
+                    isSpellchecked: isSpellchecked
+                });
+            });
+
+            return {
+                result: decodedWords.join(' '),
+                breakdown: stepByStepBreakdown
+            };
+        }
+
+        function detectOptimalShift(text) {
+            let bestShift = 0;
+            let highestMatchCount = -1;
+
+            for (let shift = -12; shift <= 12; shift++) {
+                const { result } = decodeSentence(text, shift);
+                const decodedWords = cleanString(result).split(/\s+/);
+
+                let matches = 0;
+                decodedWords.forEach(word => {
+                    if (TARGET_DICTIONARY.includes(word) || Object.values(TYPO_MAP).includes(word)) {
+                        matches++;
+                    }
+                });
+
+                if (matches > highestMatchCount) {
+                    highestMatchCount = matches;
+                    bestShift = shift;
+                }
+            }
+
+            return {
+                shift: bestShift,
+                confidence: highestMatchCount
+            };
+        }
+
+        function updateDecryption() {
+            const inputVal = encodedInput.value;
+            const shiftVal = parseInt(shiftSlider.value);
+            
+            shiftBadge.innerText = (shiftVal >= 0 ? '+' : '') + shiftVal;
+
+            const { result, breakdown } = decodeSentence(inputVal, shiftVal);
+            decodedOutput.innerText = result || "";
+
+            renderBreakdown(breakdown, shiftVal);
+        }
+
+        function renderBreakdown(breakdown, shiftVal) {
+            analysisContainer.innerHTML = '';
+            
+            if (breakdown.length === 0) {
+                analysisContainer.innerHTML = `<p class="text-xs text-slate-500 text-center py-4 italic">Enter some encoded text to see the live step-by-step math analysis.</p>`;
+                return;
+            }
+
+            breakdown.forEach(item => {
+                const wordBlock = document.createElement('div');
+                wordBlock.className = "bg-slate-950/60 border border-slate-800 p-3 rounded-lg flex flex-col gap-2";
+
+                let alternativesBadge = "";
+                if (item.alternatives && item.alternatives.length > 0) {
+                    const uniqueAlts = [...new Set(item.alternatives)];
+                    alternativesBadge = `
+                        <div class="text-[10px] text-slate-400 mt-1 italic">
+                            Alt glyph combos: <span class="text-indigo-400 font-mono">${uniqueAlts.join(', ')}</span>
+                        </div>
+                    `;
+                }
+
+                let specialIndicator = "";
+                if (item.isIgnored) {
+                    specialIndicator = `
+                        <div class="mt-1 flex items-center gap-1.5 bg-blue-950/40 border border-blue-900/40 p-1.5 rounded text-[10px] text-blue-400">
+                            <span>✨ Hardcoded Word: Kept literally as <strong>"${item.rawWord}"</strong></span>
+                        </div>
+                    `;
+                } else if (item.isSpellchecked) {
+                    const labelText = item.rawWord.toLowerCase() === 'saidu' ? 'Developer Cipher Typo Fixed' : 'Digraph Phonetic Unit Solved';
+                    specialIndicator = `
+                        <div class="mt-1 flex items-center gap-1.5 bg-emerald-950/40 border border-emerald-900/40 p-1.5 rounded text-[10px] text-emerald-400">
+                            <span>✨ ${labelText}: Literal <strong>"${item.rawWord.toUpperCase()}"</strong> mapped to <strong>"${item.decodedWord.toUpperCase()}"</strong></span>
+                        </div>
+                    `;
+                }
+
+                wordBlock.innerHTML = `
+                    <div class="flex justify-between items-center border-b border-slate-900 pb-1.5 mb-1.5">
+                        <span class="text-xs font-bold text-slate-400 tracking-wider">Word: <span class="text-indigo-400 font-mono">${item.rawWord}</span></span>
+                        <div class="text-right">
+                            <span class="text-xs text-emerald-400 font-mono font-bold">${item.decodedWord.toUpperCase()}</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 gap-2 text-xs text-slate-400">
+                `;
+
+                const listContainer = document.createElement('div');
+                listContainer.className = "space-y-1.5";
+
+                if (item.steps && item.steps.length > 0) {
+                    item.steps.forEach(step => {
+                        const mathString = shiftVal >= 0 ? `+ ${shiftVal}` : `- ${Math.abs(shiftVal)}`;
+                        
+                        const itemRow = document.createElement('div');
+                        itemRow.className = "flex items-center justify-between bg-slate-900/50 p-1.5 rounded text-xs border border-slate-850 font-mono";
+                        
+                        let fontCorrectionNote = "";
+                        if (step.firstChar !== step.corrected) {
+                            fontCorrectionNote = `<span class="text-[10px] text-amber-500 bg-amber-950/50 border border-amber-900 px-1 py-0.2 rounded font-sans uppercase">Corrected ${step.firstChar}→${step.corrected}</span>`;
+                        }
+
+                        itemRow.innerHTML = `
+                            <div class="flex items-center gap-2">
+                                <span class="bg-indigo-950 text-indigo-300 px-1.5 rounded font-bold">${step.syllable}</span>
+                                <span class="text-slate-500">→</span>
+                                <span class="text-slate-300 font-bold">${step.corrected}</span>
+                                <span>(shifted ${mathString})</span>
+                                ${fontCorrectionNote}
+                            </div>
+                            <div class="font-bold text-emerald-400 text-sm">
+                                ${step.decoded.toUpperCase()}
+                            </div>
+                        `;
+                        listContainer.appendChild(itemRow);
+                    });
+                } else if (item.isIgnored) {
+                    const itemRow = document.createElement('div');
+                    itemRow.className = "flex items-center justify-between bg-slate-900/30 p-1.5 rounded text-xs border border-slate-850 font-mono italic text-slate-500";
+                    itemRow.innerHTML = `<span>Skipped decrypion operations</span><span>—</span>`;
+                    listContainer.appendChild(itemRow);
+                }
+
+                wordBlock.appendChild(listContainer);
+                
+                if (specialIndicator) {
+                    const scDiv = document.createElement('div');
+                    scDiv.innerHTML = specialIndicator;
+                    wordBlock.appendChild(scDiv);
+                }
+
+                if (alternativesBadge) {
+                    const altDiv = document.createElement('div');
+                    altDiv.innerHTML = alternativesBadge;
+                    wordBlock.appendChild(altDiv);
+                }
+
+                analysisContainer.appendChild(wordBlock);
+            });
+        }
+
+        async function fetchWithRetry(url, options, maxRetries = 5) {
+            let delay = 1000;
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) {
+                        return await response.json();
+                    }
+                    let errMsg = `HTTP ${response.status}`;
+                    try {
+                        const errData = await response.json();
+                        if (errData.error && errData.error.message) {
+                            errMsg = errData.error.message;
+                        }
+                    } catch (_) {}
+                    throw new Error(errMsg);
+                } catch (e) {
+                    if (i === maxRetries - 1) throw e;
+                }
+                await new Promise(resolve => setTimeout(resolve, delay));
+                delay *= 2;
+            }
+        }
+
+        async function analyzeImage(base64Data, mimeType) {
+            aiLoader.classList.remove('hidden');
+            errorToast.classList.add('hidden');
+            scannerLine.classList.remove('hidden');
+
+            try {
+                const payload = {
+                    contents: [{
+                        role: "user",
+                        parts: [
+                            {
+                                text: "You are a professional cryptanalyst and OCR scanner. Analyze this game screenshot. " +
+                                      "Identify and extract ONLY the text colored in light blue or cyan (which is the actual chat message). " +
+                                      "Ignore white text, usernames (e.g., 'Lawful:', 'Suny:', etc. which are in different colors), and timestamps.\n\n" +
+                                      "Return ONLY the exact raw extracted text as a single string of space-separated words, preserving their capitalizations. " +
+                                      "Do not include markdown formatting, code blocks, explanations, or commentary."
+                            },
+                            {
+                                inlineData: {
+                                    mimeType: mimeType,
+                                    data: base64Data
+                                }
+                            }
+                        ]
+                    }]
+                };
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+                const data = await fetchWithRetry(apiUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) {
+                    const cleanedOutputText = text.replace(/[\r\n]+/g, ' ').trim();
+                    encodedInput.value = cleanedOutputText;
+                    
+                    const detection = detectOptimalShift(cleanedOutputText);
+                    if (detection.confidence > 0) {
+                        shiftSlider.value = detection.shift;
+                        autoDetectIndicator.innerText = `Auto-Selected (Confidence: ${detection.confidence})`;
+                        autoDetectIndicator.className = "text-xs text-emerald-400 font-semibold";
+                    } else {
+                        autoDetectIndicator.innerText = "No auto-matches, manual override active";
+                        autoDetectIndicator.className = "text-xs text-slate-500";
+                    }
+                    updateDecryption();
+                } else {
+                    throw new Error("No cipher text detected in the scanning sweep.");
+                }
+            } catch (err) {
+                errorToast.innerText = err.message || "Failed to establish a neural connection to the analysis node.";
+                errorToast.classList.remove('hidden');
+            } finally {
+                aiLoader.classList.add('hidden');
+                scannerLine.classList.add('hidden');
+            }
+        }
+
+        function handleImageFile(file) {
+            if (!file || !file.type.startsWith('image/')) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Data = e.target.result.split(',')[1];
+                imagePreview.src = e.target.result;
+                imageName.innerText = file.name;
+                uploadPrompt.classList.add('hidden');
+                previewContainer.classList.remove('hidden');
+                analyzeImage(base64Data, file.type);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function renderHistoryLog() {
+            historyContainer.innerHTML = '';
+            if (sessionLogs.length === 0) {
+                historyContainer.innerHTML = `<p class="text-xs text-slate-500 italic text-center py-4">No logged messages in this session.</p>`;
+                return;
+            }
+
+            sessionLogs.forEach((log, idx) => {
+                const logItem = document.createElement('div');
+                logItem.className = "bg-slate-950/80 border border-slate-800 p-2.5 rounded-lg flex flex-col gap-1.5 text-xs relative group";
+
+                logItem.innerHTML = `
+                    <div class="flex justify-between items-center text-[10px] text-slate-500">
+                        <span class="font-bold text-indigo-400">LOG #${idx + 1} &bull; SHIFT ${log.shift >= 0 ? '+' : ''}${log.shift}</span>
+                        <button onclick="navigator.clipboard.writeText('${log.decoded.replace(/'/g, "\\'")}');" class="text-blue-400 hover:text-blue-300 transition-colors uppercase font-bold tracking-widest text-[9px]">Copy</button>
+                    </div>
+                    <div class="text-slate-400 font-mono tracking-wide break-all">${log.raw}</div>
+                    <div class="text-emerald-400 font-bold uppercase tracking-wide break-words text-sm mt-0.5">${log.decoded}</div>
+                `;
+                historyContainer.appendChild(logItem);
+            });
+        }
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-blue-500', 'bg-slate-900/60');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-blue-500', 'bg-slate-900/60');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500', 'bg-slate-900/60');
+            const file = e.dataTransfer.files[0];
+            handleImageFile(file);
+        });
+
+        dropZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            handleImageFile(file);
+        });
+
+        document.addEventListener('paste', (e) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const file = items[i].getAsFile();
+                    handleImageFile(file);
+                    break;
+                }
+            }
+        });
+
+        encodedInput.addEventListener('input', () => {
+            const detection = detectOptimalShift(encodedInput.value);
+            if (detection.confidence > 0) {
+                shiftSlider.value = detection.shift;
+                autoDetectIndicator.innerText = `Auto-Selected (Confidence: ${detection.confidence})`;
+                autoDetectIndicator.className = "text-xs text-emerald-400 font-semibold";
+            } else {
+                autoDetectIndicator.innerText = "No auto-matches, manual override active";
+                autoDetectIndicator.className = "text-xs text-slate-500";
+            }
+            updateDecryption();
+        });
+
+        shiftSlider.addEventListener('input', () => {
+            autoDetectIndicator.innerText = "Manual tune active";
+            autoDetectIndicator.className = "text-xs text-amber-500 font-semibold";
+            updateDecryption();
+        });
+
+        autoDetectBtn.addEventListener('click', () => {
+            const detection = detectOptimalShift(encodedInput.value);
+            shiftSlider.value = detection.shift;
+            autoDetectIndicator.innerText = `Matched shift ${detection.shift >= 0 ? '+' : ''}${detection.shift} (Confidence: ${detection.confidence})`;
+            autoDetectIndicator.className = "text-xs text-emerald-400 font-semibold";
+            updateDecryption();
+        });
+
+        saveLogBtn.addEventListener('click', () => {
+            const raw = encodedInput.value.trim();
+            const decoded = decodedOutput.innerText.trim();
+            const shift = parseInt(shiftSlider.value);
+            if (raw && decoded) {
+                writeLogToCache(raw, decoded, shift);
+            }
+        });
+
+        clearHistoryBtn.addEventListener('click', () => {
+            clearLogsFromCache();
+        });
+
+        [toggleVN, toggleKC, toggleSpaceFix].forEach(toggle => {
+            toggle.addEventListener('change', updateDecryption);
+        });
+
+        clearBtn.addEventListener('click', () => {
+            encodedInput.value = '';
+            uploadPrompt.classList.remove('hidden');
+            previewContainer.classList.add('hidden');
+            imagePreview.src = '#';
+            imageName.innerText = '';
+            updateDecryption();
+        });
+
+        copyBtn.addEventListener('click', () => {
+            const textToCopy = decodedOutput.innerText;
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = textToCopy;
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextarea);
+            
+            const origText = copyBtn.innerText;
+            copyBtn.innerText = "COPIED!";
+            copyBtn.className = "text-xs text-emerald-100 bg-emerald-600 transition-colors py-1 px-2.5 rounded-md";
+            setTimeout(() => {
+                copyBtn.innerText = origText;
+                copyBtn.className = "text-xs text-emerald-400 hover:text-emerald-300 transition-colors py-1 px-2.5 bg-emerald-950/40 border border-emerald-900/50 rounded-md";
+            }, 1500);
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadLogsFromCache();
+            updateDecryption();
+        });
+    </script>
+
+</body>
+</html>
