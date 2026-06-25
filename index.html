@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lotus Cipher Intel Decoder</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts for a gaming/sci-fi aesthetic -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
@@ -28,7 +26,6 @@
 </head>
 <body class="min-h-screen text-slate-100 flex flex-col justify-between selection:bg-blue-600 selection:text-white">
 
-    <!-- Header -->
     <header class="border-b border-slate-800/80 bg-slate-950/50 backdrop-blur-md px-6 py-4 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-3">
@@ -45,20 +42,16 @@
         </div>
     </header>
 
-    <!-- Main Content Area -->
     <main class="max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex-grow grid grid-cols-1 lg:grid-cols-12 gap-8">
         
-        <!-- Left Side: Inputs & Main Output (7 cols) -->
         <div class="lg:col-span-7 flex flex-col gap-6">
             
-            <!-- Decryption Console Card -->
             <div class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6 backdrop-blur-sm glowing-border flex flex-col gap-5">
                 <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                     <h2 class="text-lg font-semibold tracking-wider text-blue-400">INPUT INTEL</h2>
                     <button id="clear-btn" class="text-xs text-slate-400 hover:text-rose-400 transition-colors py-1 px-2.5 bg-slate-950/50 border border-slate-850 rounded-md">CLEAR</button>
                 </div>
                 
-                <!-- Encoded Input -->
                 <div class="flex flex-col gap-2">
                     <label class="text-xs text-slate-400 uppercase tracking-wider" for="encoded-input">Encoded Message:</label>
                     <textarea 
@@ -66,12 +59,10 @@
                         rows="4" 
                         class="code-font w-full bg-slate-950/80 border border-slate-800 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none text-cyan-300 text-sm leading-relaxed"
                         placeholder="Paste your encoded text here..."
-                    >Aqualis Duiisamuiisasaeidu</textarea>
+                    ></textarea>
                 </div>
 
-                <!-- Shift & Mode Selectors -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950/40 border border-slate-800/50 p-4 rounded-lg">
-                    <!-- Shift Tuning Slider -->
                     <div class="flex flex-col gap-2">
                         <div class="flex justify-between items-center">
                             <label class="text-xs text-slate-400 uppercase tracking-wider" for="shift-slider">Shift Value (N):</label>
@@ -87,7 +78,6 @@
                         >
                     </div>
 
-                    <!-- Auto-detect Status Panel -->
                     <div class="flex flex-col justify-center gap-1.5">
                         <div class="text-xs text-slate-400 uppercase tracking-wider">Shift Finder:</div>
                         <div class="flex items-center gap-2">
@@ -99,7 +89,6 @@
                     </div>
                 </div>
 
-                <!-- Font Glitch Toggles -->
                 <div class="flex flex-col gap-2">
                     <div class="flex justify-between items-center">
                         <span class="text-xs text-slate-400 uppercase tracking-wider">Smart Font Corrections:</span>
@@ -122,7 +111,6 @@
                 </div>
             </div>
 
-            <!-- Decoded Output Card -->
             <div class="bg-slate-900/40 border border-emerald-800/60 rounded-xl p-6 backdrop-blur-sm glowing-border-success flex flex-col gap-4">
                 <div class="flex justify-between items-center border-b border-emerald-900/60 pb-3">
                     <h2 class="text-lg font-semibold tracking-wider text-emerald-400">DECRYPTED INTEL</h2>
@@ -130,24 +118,25 @@
                 </div>
                 
                 <div id="decoded-output" class="text-xl tracking-wide font-semibold text-emerald-300 min-h-[64px] bg-slate-950/50 border border-emerald-950 rounded-lg p-4 flex items-center justify-start transition-all uppercase leading-relaxed">
-                    AQUALIS DISMISSED
+                    
+                </div>
+                
+                <div class="flex items-center gap-2 text-xs text-slate-500 border-t border-slate-800/80 pt-3 italic">
+                    <span class="text-amber-500/80 text-sm">⚠️</span>
+                    <span>Note: Due to variations in certain words, the decoder possesses a ~90% accuracy rate per word. Minor manual adjustments may be necessary.</span>
                 </div>
             </div>
 
         </div>
 
-        <!-- Right Side: Step-by-Step & Cheat Sheet (5 cols) -->
         <div class="lg:col-span-5 flex flex-col gap-6">
             
-            <!-- Live Analysis / Step-by-step -->
             <div class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6 backdrop-blur-sm flex flex-col gap-4">
                 <h2 class="text-lg font-semibold tracking-wider text-indigo-400 border-b border-slate-800 pb-3">LIVE DECRYPTION BREAKDOWN</h2>
                 <div class="overflow-y-auto max-h-[300px] pr-2 custom-scrollbar flex flex-col gap-3" id="analysis-container">
-                    <!-- Loaded dynamically via Javascript -->
                 </div>
             </div>
 
-            <!-- Cheat Sheet Card -->
             <div class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-6 backdrop-blur-sm flex flex-col gap-4">
                 <h2 class="text-lg font-semibold tracking-wider text-slate-300 border-b border-slate-800 pb-3">CIPHER CHEAT SHEET</h2>
                 <div class="flex flex-col gap-3 text-sm text-slate-300">
@@ -175,15 +164,13 @@
 
     </main>
 
-    <!-- Footer -->
     <footer class="border-t border-slate-900 bg-slate-950/40 p-4 text-center text-xs text-slate-500">
         <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-            <p>© 2026 Lotus Intelligence decryptor</p>
-            <p>Designed for gaming font correction and Real-Time analysis.</p>
+            <p>By the Lotus Intelligence</p>
+            <p>Designed for decoding languages from other nations.</p>
         </div>
     </footer>
 
-    <!-- Scripting for decryption operations -->
     <script>
         const encodedInput = document.getElementById('encoded-input');
         const shiftSlider = document.getElementById('shift-slider');
@@ -199,7 +186,6 @@
         const toggleKC = document.getElementById('toggle-kc');
         const toggleSpaceFix = document.getElementById('toggle-spacefix');
 
-        // Expanded dictionary with all verified decoded game words
         const TARGET_DICTIONARY = [
             'to', 'we', 'me', 'on', 'in', 'is', 'as', 'go', 'do', 'no',
             'need', 'the', 'palace', 'stop', 'push', 'fires', 'sides',
@@ -209,7 +195,6 @@
             'dismissed', 'aqualis'
         ];
 
-        // Spellcheck maps to auto-correct common visual translation glitched outputs
         const TYPO_MAP = {
             'tjv': 'the',
             'sii': 'single',
@@ -239,18 +224,15 @@
             'uany': 'many'
         };
 
-        // Clean up text and convert elements to array of clean lowercase words
         function cleanString(str) {
             return str.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"").toLowerCase();
         }
 
-        // Apply shift calculation with wrap-around
         function shiftChar(char, shift) {
             const isUpper = char === char.toUpperCase();
             const baseChar = char.toLowerCase();
             const code = baseChar.charCodeAt(0);
 
-            // Only shift letters a-z
             if (code >= 97 && code <= 122) {
                 let shiftedCode = code + shift;
                 if (shiftedCode < 97) shiftedCode += 26;
@@ -262,7 +244,6 @@
             return char;
         }
 
-        // Generate combinations of characters based on font choices
         function getLetterChoices(char) {
             const lower = char.toLowerCase();
             const isUpper = char === char.toUpperCase();
@@ -282,7 +263,6 @@
             return [...new Set(choices)];
         }
 
-        // Generate all string combinations from a list of array choices
         function generateCombinations(choicesArrays) {
             let results = [[]];
             for (const choices of choicesArrays) {
@@ -297,7 +277,6 @@
             return results.map(arr => arr.join(''));
         }
 
-        // Parse and decode sentence using the new smart branching algorithm + spellcheck
         function decodeSentence(text, shift) {
             const words = text.split(/\s+/);
             const decodedWords = [];
@@ -308,7 +287,6 @@
 
                 const cleanWord = cleanString(word);
 
-                // EXEMPTION: Keep "Aqualis" exactly as it is (case-insensitive check, but preserve original case)
                 if (cleanWord === 'aqualis') {
                     decodedWords.push(word);
                     stepByStepBreakdown.push({
@@ -322,9 +300,7 @@
                     return;
                 }
 
-                // Handle literal spellcheck rules before running cipher math
                 if (TYPO_MAP[cleanWord]) {
-                    // Force decode for known unique words
                     const finalWord = TYPO_MAP[cleanWord];
                     decodedWords.push(finalWord);
                     stepByStepBreakdown.push({
@@ -343,7 +319,6 @@
                     return;
                 }
 
-                // Split word into first-characters of syllables
                 const baseSyllables = [];
                 for (let i = 0; i < word.length; i += 2) {
                     const syllable = word.substr(i, 2);
@@ -355,13 +330,9 @@
                     }
                 }
 
-                // Collect choices for each syllable's starting character
                 const choicesArrays = baseSyllables.map(s => getLetterChoices(s.char));
-
-                // Generate combinations of characters (e.g., ['K', 'v'] -> ['Kv', 'Kn', 'Cv', 'Cn'])
                 const combinations = generateCombinations(choicesArrays);
 
-                // Decode each combination candidate
                 const candidateDecodes = combinations.map(comb => {
                     let decoded = '';
                     for (let i = 0; i < comb.length; i++) {
@@ -373,7 +344,6 @@
                     };
                 });
 
-                // Check for matches in the dictionary
                 let bestCandidate = candidateDecodes[0];
                 let isSpellchecked = false;
                 let spellcheckedValue = "";
@@ -386,11 +356,9 @@
                     }
                 });
 
-                // Pick best candidate
                 if (validMatches.length > 0) {
                     bestCandidate = validMatches[0];
                 } else {
-                    // Try to match through our known Visual Typo Auto-Spellcheck Map
                     for (let cand of candidateDecodes) {
                         const decodedLower = cand.decoded.toLowerCase();
                         if (TYPO_MAP[decodedLower]) {
@@ -402,7 +370,6 @@
                     }
                 }
 
-                // Build detailed step-by-step metadata
                 const steps = [];
                 for (let i = 0; i < baseSyllables.length; i++) {
                     const rawSyllable = baseSyllables[i].raw;
@@ -418,7 +385,6 @@
                     });
                 }
 
-                // Gather other alternative translations
                 const alternatives = candidateDecodes
                     .filter(c => c.decoded !== bestCandidate.decoded)
                     .map(c => c.decoded.toUpperCase());
@@ -442,12 +408,10 @@
             };
         }
 
-        // Automatically determine shift value based on match algorithm
         function detectOptimalShift(text) {
-            let bestShift = 0; // default to 0
+            let bestShift = 0;
             let highestMatchCount = -1;
 
-            // Scan all possible normal Caesar shifts
             for (let shift = -12; shift <= 12; shift++) {
                 const { result } = decodeSentence(text, shift);
                 const decodedWords = cleanString(result).split(/\s+/);
@@ -471,22 +435,18 @@
             };
         }
 
-        // Render UI values
         function updateDecryption() {
             const inputVal = encodedInput.value;
             const shiftVal = parseInt(shiftSlider.value);
             
-            // Format slider text badge
             shiftBadge.innerText = (shiftVal >= 0 ? '+' : '') + shiftVal;
 
             const { result, breakdown } = decodeSentence(inputVal, shiftVal);
             decodedOutput.innerText = result || "N/A";
 
-            // Render breakdown UI
             renderBreakdown(breakdown, shiftVal);
         }
 
-        // Render step by step breakdown table
         function renderBreakdown(breakdown, shiftVal) {
             analysisContainer.innerHTML = '';
             
@@ -499,7 +459,6 @@
                 const wordBlock = document.createElement('div');
                 wordBlock.className = "bg-slate-950/60 border border-slate-800 p-3 rounded-lg flex flex-col gap-2";
 
-                // Alternatives badge logic
                 let alternativesBadge = "";
                 if (item.alternatives && item.alternatives.length > 0) {
                     const uniqueAlts = [...new Set(item.alternatives)];
@@ -510,7 +469,6 @@
                     `;
                 }
 
-                // Special Ignored/Hardcoded Badge UI
                 let specialIndicator = "";
                 if (item.isIgnored) {
                     specialIndicator = `
@@ -527,7 +485,6 @@
                     `;
                 }
 
-                // Word level heading
                 wordBlock.innerHTML = `
                     <div class="flex justify-between items-center border-b border-slate-900 pb-1.5 mb-1.5">
                         <span class="text-xs font-bold text-slate-400 tracking-wider">Word: <span class="text-indigo-400 font-mono">${item.rawWord}</span></span>
@@ -592,7 +549,6 @@
             });
         }
 
-        // Events
         encodedInput.addEventListener('input', () => {
             const detection = detectOptimalShift(encodedInput.value);
             if (detection.confidence > 0) {
@@ -620,7 +576,6 @@
             updateDecryption();
         });
 
-        // Toggle triggers
         [toggleVN, toggleKC, toggleSpaceFix].forEach(toggle => {
             toggle.addEventListener('change', updateDecryption);
         });
@@ -648,7 +603,6 @@
             }, 1500);
         });
 
-        // Initialize state
         window.addEventListener('DOMContentLoaded', () => {
             updateDecryption();
         });
