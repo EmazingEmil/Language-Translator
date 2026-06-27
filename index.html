@@ -112,21 +112,7 @@
                         rows="3" 
                         class="code-font w-full bg-slate-950/80 border border-slate-800 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none text-cyan-300 text-sm leading-relaxed"
                         placeholder="Paste your encoded text here or drop an image below..."
-                    >AQUALIS OOTISHA EIVAQU SAIDUHAQU SAIQUVAMUDU QUUOLI
-Braeva aelili Liootiuasa riaevakeeirisa
-Muvasa hamu saihari riduquuaduqu
-.Keliqu vebrqu
-qudukazu
-iiuavaveiitiei
-saieiriaeli
-sapiaewava yiauri shaiipi
-muyi gaoosha
-Brriookeeiva gaaemuei
-AEVADU IIVAVEIITIEI EIVEEIRIYIOOVAEI
-Aemu li vaooti breiira kaliaeri?
-faooaeuaoobr quriquriwa
-livaveiitiei jaaebreiri
-SAXASHA IIRIUA SAIHALIUA SAIUARIQUHA JAUOPI</textarea>
+                    ></textarea>
                 </div>
 
                 <div class="flex flex-col gap-2">
@@ -149,24 +135,13 @@ SAXASHA IIRIUA SAIHALIUA SAIUARIQUHA JAUOPI</textarea>
                     </div>
                 </div>
 
-                <div class="flex flex-col gap-1.5 bg-slate-950/50 border border-slate-800/80 p-3 rounded-lg">
-                    <label class="text-xs text-slate-400 uppercase tracking-wider" for="groq-key-input">Groq Developer API Key:</label>
-                    <input 
-                        type="password" 
-                        id="groq-key-input" 
-                        class="bg-slate-900 border border-slate-800 rounded px-3 py-1.5 text-xs text-emerald-400 outline-none w-full font-mono" 
-                        placeholder="Paste your gsk_... key from console.groq.com"
-                    >
-                    <div class="text-[10px] text-slate-500">Provides secure, ultra-fast OCR scanning completely stored in local browser cache.</div>
-                </div>
-
-                <div id="error-toast" class="bg-rose-950/80 border border-rose-900 text-rose-300 text-xs px-3 py-2 rounded-lg hidden font-mono font-bold leading-relaxed"></div>
+                <div id="error-toast" class="bg-rose-950/80 border border-rose-900 text-rose-300 text-xs px-3 py-2 rounded-lg hidden font-mono"></div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950/40 border border-slate-800/50 p-4 rounded-lg">
                     <div class="flex flex-col gap-2">
                         <div class="flex justify-between items-center">
-                            <label class="text-xs text-slate-400 uppercase tracking-wider" for="shift-slider">Shift Value Override (N):</label>
-                            <span id="shift-badge" class="bg-blue-950 text-blue-300 text-xs px-2 py-0.5 rounded border border-blue-800 font-bold code-font">Auto</span>
+                            <label class="text-xs text-slate-400 uppercase tracking-wider" for="shift-slider">Shift Value (N):</label>
+                            <span id="shift-badge" class="bg-blue-950 text-blue-300 text-xs px-2 py-0.5 rounded border border-blue-800 font-bold code-font">0</span>
                         </div>
                         <input 
                             type="range" 
@@ -179,13 +154,23 @@ SAXASHA IIRIUA SAIHALIUA SAIUARIQUHA JAUOPI</textarea>
                     </div>
 
                     <div class="flex flex-col justify-center gap-1.5">
-                        <div class="text-xs text-slate-400 uppercase tracking-wider">Multi-Shift Detection:</div>
+                        <div class="text-xs text-slate-400 uppercase tracking-wider">Shift Finder:</div>
                         <div class="flex items-center gap-2">
                             <button id="auto-detect-btn" class="bg-emerald-950 text-emerald-300 border border-emerald-800 text-xs px-3 py-1.5 rounded hover:bg-emerald-900 transition-all font-semibold uppercase tracking-wider flex items-center gap-1">
                                 🔍 Auto-Detect Shift
                             </button>
-                            <span id="auto-detect-indicator" class="text-xs text-emerald-400 font-semibold bg-emerald-950/40 border border-emerald-900/50 px-2.5 py-1 rounded">Active Line-by-Line</span>
+                            <span id="auto-detect-indicator" class="text-xs text-slate-500">Manual overridden</span>
                         </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950/40 border border-slate-800/50 p-4 rounded-lg flex flex-col gap-3">
+                    <div class="flex justify-between items-center">
+                        <div class="text-xs text-slate-400 uppercase tracking-wider">Top 5 Shift Candidates:</div>
+                        <span id="shift-confidence-badge" class="text-[10px] px-2 py-0.5 rounded border border-slate-700 text-slate-400 uppercase">Awaiting Input</span>
+                    </div>
+                    <div id="shift-candidates-list" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+                        <p class="text-xs text-slate-500 italic">Type or scan a message to generate shift alternatives.</p>
                     </div>
                 </div>
 
@@ -220,7 +205,8 @@ SAXASHA IIRIUA SAIHALIUA SAIUARIQUHA JAUOPI</textarea>
                     </div>
                 </div>
                 
-                <div id="decoded-output" class="text-xl tracking-wide font-semibold text-emerald-300 min-h-[64px] bg-slate-950/50 border border-emerald-950 rounded-lg p-4 flex items-center justify-center transition-all uppercase leading-relaxed font-mono whitespace-pre-line text-left">
+                <div id="decoded-output" class="text-xl tracking-wide font-semibold text-emerald-300 min-h-[64px] bg-slate-950/50 border border-emerald-950 rounded-lg p-4 flex items-center justify-start transition-all uppercase leading-relaxed">
+                    AQUALIS DISMISSED
                 </div>
                 
                 <div class="flex items-center gap-2 text-xs text-slate-500 border-t border-slate-800/80 pt-3 italic">
@@ -249,11 +235,12 @@ SAXASHA IIRIUA SAIHALIUA SAIUARIQUHA JAUOPI</textarea>
                         <p class="text-xs text-slate-400 leading-relaxed">Isolate the first character of any 4-letter word. It translates to common 2-letter words like <span class="text-emerald-300 font-bold code-font">TO, WE, ME, ON, IN, IS</span>. Brute force your shift using this word!</p>
                     </div>
                     <div class="bg-slate-950/60 border border-slate-850 p-3 rounded-lg flex flex-col gap-1">
-                        <span class="text-xs font-bold text-amber-400 uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">VERIFIED SYSTEM WORDS</span>
+                        <span class="text-xs font-bold text-amber-400 uppercase tracking-widest">Known Shift Anchors</span>
                         <ul class="text-xs text-slate-400 space-y-0.5 list-disc pl-4">
-                            <li><span class="text-amber-300 code-font">brvalidu...</span> (Shift -1) = "COME..."</li>
-                            <li><span class="text-amber-300 code-font">xaau...</span> (Shift -1) = "YOU..."</li>
-                            <li><span class="text-amber-300 code-font">aezumuyizuhahave...</span> (Shift -1) = "BANZAIIW..."</li>
+                            <li><span class="text-amber-300 code-font">MULI...</span> (Shift +2) = "ON..."</li>
+                            <li><span class="text-amber-300 code-font">VAMU...</span> (Shift +1) = "ON..."</li>
+                            <li><span class="text-amber-300 code-font">ZUHA...</span> (Shift -2) = "WE..."</li>
+                            <li><span class="text-amber-300 code-font">WARI...</span> (Shift -2) = "TO..."</li>
                         </ul>
                     </div>
                 </div>
@@ -286,8 +273,10 @@ SAXASHA IIRIUA SAIHALIUA SAIUARIQUHA JAUOPI</textarea>
         const decodedOutput = document.getElementById('decoded-output');
         const clearBtn = document.getElementById('clear-btn');
         const copyBtn = document.getElementById('copy-btn');
-        const autoDetectIndicator = document.getElementById('auto-detect-indicator');
         const autoDetectBtn = document.getElementById('auto-detect-btn');
+        const autoDetectIndicator = document.getElementById('auto-detect-indicator');
+        const shiftCandidatesList = document.getElementById('shift-candidates-list');
+        const shiftConfidenceBadge = document.getElementById('shift-confidence-badge');
         const analysisContainer = document.getElementById('analysis-container');
         const dropZone = document.getElementById('drop-zone');
         const fileInput = document.getElementById('file-input');
@@ -298,7 +287,6 @@ SAXASHA IIRIUA SAIHALIUA SAIUARIQUHA JAUOPI</textarea>
         const aiLoader = document.getElementById('ai-loader');
         const errorToast = document.getElementById('error-toast');
         const scannerLine = document.getElementById('scanner-line');
-        const groqKeyInput = document.getElementById('groq-key-input');
 
         const saveLogBtn = document.getElementById('save-log-btn');
         const historyContainer = document.getElementById('history-container');
@@ -308,18 +296,19 @@ SAXASHA IIRIUA SAIHALIUA SAIUARIQUHA JAUOPI</textarea>
         const toggleKC = document.getElementById('toggle-kc');
         const toggleSpaceFix = document.getElementById('toggle-spacefix');
 
-        const apiKey = "AIzaSyCsggE_dvh551L7SzVpjvWYQXrk-q9NNVk";
+        const groqApiKey = "YXo3em9PdnJBbE5USENqUEcwdVJicElQWUYzYnlkR1dQaDZiZXdGV3dHMU9zbk1xNzhCVF9rc2c=";
+        const geminiApiKey = "AIzaSyDDsmTlC2zzc2nlNt2UIZv7aVPGFLfo0A4";
+        const groqVisionModel = "qwen/qwen3.6-27b";
+        const geminiVisionModel = "gemini-2.5-flash";
+        const visionPrompt = "You are a professional cryptanalyst and OCR scanner. Analyze this game screenshot. Identify and extract ONLY the text colored in light blue or cyan (which is the actual chat message). Ignore white text, usernames (e.g., 'Lawful:', 'Suny:', etc. which are in different colors), and timestamps.\n\nReturn ONLY the exact raw extracted text as a single string of space-separated words, preserving their capitalizations. Do not include markdown formatting, code blocks, explanations, or commentary.";
 
         const TARGET_DICTIONARY = [
             'to', 'we', 'me', 'on', 'in', 'is', 'as', 'go', 'do', 'no',
             'need', 'the', 'palace', 'stop', 'push', 'fires', 'sides',
-            'everyone', 'everybody', 'possible', 'long', 'live', 'this', 'lag', 'bro',
-            'with', 'attack', 'attacking', 'lotus', 'single',
+            'everyone', 'possible', 'long', 'live', 'this', 'lag', 'bro',
+            'with', 'everybody', 'attack', 'attacking', 'lotus', 'single',
             'focus', 'purple', 'red', 'right', 'many', 'people', 'one', 'i',
-            'dismissed', 'aqualis', 'pfp', 'come', 'you', 'banzai', 'banzaiiw',
-            'pm', 'for', 'party', 'join', 'broken', 'game', 'limits', 'physics',
-            'not', 'server', 'kick', 'hhos', 'nah', 'invite', 'mredago', 'spawn',
-            'your', 'ship', 'gosh', 'and', 'am', 'being', 'clear', 'roblox', 'cringe', 'them'
+            'dismissed', 'aqualis', 'aurelic', 'speak', 'speaka', 'says', 'said', 'wait'
         ];
 
         const TYPO_MAP = {
@@ -333,8 +322,7 @@ SAXASHA IIRIUA SAIHALIUA SAIUARIQUHA JAUOPI</textarea>
             'pupx': 'push',
             'saxasha': 'push',
             'piuasha': 'push',
-            'saiiisa': 'pfp',
-            'saiisa': 'pfp',
+            'saiiisa': 'this',
             'siis': 'this',
             'pf': 'the',
             'pfx': 'the',
@@ -350,85 +338,174 @@ SAXASHA IIRIUA SAIHALIUA SAIUARIQUHA JAUOPI</textarea>
             'wirh': 'with',
             'siles': 'sides',
             'uany': 'many',
-            'brvalidu': 'come',
-            'xaau': 'you',
-            'aezumuyizuhahave': 'banzaiiw',
-            'aezumuyizuha': 'banzai',
-            'ootisha': 'pm',
-            'eivaqu': 'me',
-            'saiduhaqu': 'for',
-            'saiquvamudu': 'party',
-            'quuoli': 'join',
-            'braeva': 'broken',
-            'aelili': 'game',
-            'liootiuasa': 'limits',
-            'riaevakeeirisa': 'physics',
-            'muvasa': 'not',
-            'hamu': 'in',
-            'saihari': 'this',
-            'riduquuaduqu': 'server',
-            'keliqu': 'kick',
-            'vebrqu': 'hhos',
-            'qudukazu': 'nah',
-            'iiuavaveiitiei': 'invite',
-            'saieiriaeli': 'mredago',
-            'sapiaewava': 'spawn',
-            'yiauri': 'your',
-            'shaiipi': 'ship',
-            'gaoosha': 'gosh',
-            'brriookeeiva': 'broken',
-            'gaaemuei': 'game',
-            'aevadu': 'and',
-            'iivaveiitiei': 'invite',
-            'eiveeiriyioovaei': 'everyone',
-            'aemu': 'am',
-            'vaooti': 'not',
-            'breiira': 'being',
-            'kaliaeri': 'clear',
-            'faooaeuaoobr': 'roblox',
-            'quriquriwa': 'cringe',
-            'iiriua': 'for',
-            'saihaliua': 'them',
-            'saiuariquha': 'party',
-            'jauopi': 'join'
+            'aurelik': 'aurelic',
+            'spak': 'speak'
         };
 
-        let sessionLogs = [];
-        let isAutoMode = true;
+        const RATE_LIMIT_PATTERNS = [
+            /rate limit/i,
+            /too many requests/i,
+            /quota/i,
+            /resource exhausted/i,
+            /limit exceeded/i,
+            /exceeded/i,
+            /retry after/i
+        ];
 
-        async function fetchWithRetry(url, options, maxRetries = 5) {
-            let delay = 1000;
-            for (let i = 0; i < maxRetries; i++) {
-                try {
-                    const response = await fetch(url, options);
-                    if (response.ok) {
-                        return await response.json();
-                    }
-                    let errMsg = `HTTP ${response.status}`;
-                    try {
-                        const errData = await response.json();
-                        if (errData.error && errData.error.message) {
-                            errMsg = errData.error.message;
-                        }
-                    } catch (_) {}
-                    throw new Error(errMsg);
-                } catch (e) {
-                    if (i === maxRetries - 1) throw e;
+        function isRateLimitError(error) {
+            const status = error?.status;
+            const message = `${error?.message || ''} ${error?.details || ''}`.trim();
+            return status === 429 || RATE_LIMIT_PATTERNS.some(pattern => pattern.test(message));
+        }
+
+        function buildManualFallbackMessage() {
+            return "AI is unavailable right now because the image reader hit rate limits. Please read the message directly from the image.";
+        }
+
+        function extractErrorMessage(payload, response, fallbackText) {
+            const nestedMessage = payload?.error?.message || payload?.message || payload?.detail || payload?.details;
+            const statusText = response?.status ? `HTTP ${response.status}` : "Request failed";
+            return nestedMessage || fallbackText || statusText;
+        }
+
+        async function readResponseError(response) {
+            const contentType = response.headers.get('content-type') || '';
+
+            try {
+                if (contentType.includes('application/json')) {
+                    const payload = await response.json();
+                    return {
+                        payload,
+                        text: extractErrorMessage(payload, response, '')
+                    };
                 }
-                await new Promise(resolve => setTimeout(resolve, delay));
-                delay *= 2;
+
+                const text = await response.text();
+                return {
+                    payload: null,
+                    text: text.trim()
+                };
+            } catch (_) {
+                return {
+                    payload: null,
+                    text: ''
+                };
             }
         }
+
+        async function postJsonWithErrors(url, options, providerName) {
+            const response = await fetch(url, options);
+
+            if (!response.ok) {
+                const errorBody = await readResponseError(response);
+                const error = new Error(extractErrorMessage(errorBody.payload, response, errorBody.text || `HTTP ${response.status}`));
+                error.status = response.status;
+                error.provider = providerName;
+                error.details = errorBody.text || '';
+                error.rateLimited = isRateLimitError(error);
+                error.retryAfter = response.headers.get('retry-after') || '';
+                throw error;
+            }
+
+            return response.json();
+        }
+
+        function extractGroqText(data) {
+            return data?.choices?.[0]?.message?.content || '';
+        }
+
+        function extractGeminiText(data) {
+            return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        }
+
+        async function requestGroqVision(base64Data, mimeType) {
+            const payload = {
+                model: groqVisionModel,
+                messages: [{
+                    role: 'user',
+                    content: [
+                        { type: 'text', text: visionPrompt },
+                        {
+                            type: 'image_url',
+                            image_url: {
+                                url: `data:${mimeType};base64,${base64Data}`
+                            }
+                        }
+                    ]
+                }],
+                temperature: 0,
+                reasoning_effort: 'none',
+                max_completion_tokens: 256,
+                top_p: 1,
+                stream: false
+            };
+
+            const data = await postJsonWithErrors(
+                'https://api.groq.com/openai/v1/chat/completions',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${groqApiKey}`
+                    },
+                    body: JSON.stringify(payload)
+                },
+                'groq'
+            );
+
+            const text = extractGroqText(data);
+            if (!text) {
+                throw new Error('Groq returned an empty OCR result.');
+            }
+
+            return text;
+        }
+
+        async function requestGeminiVision(base64Data, mimeType) {
+            const payload = {
+                contents: [{
+                    role: 'user',
+                    parts: [
+                        { text: visionPrompt },
+                        {
+                            inlineData: {
+                                mimeType: mimeType,
+                                data: base64Data
+                            }
+                        }
+                    ]
+                }],
+                generationConfig: {
+                    temperature: 0,
+                    maxOutputTokens: 256
+                }
+            };
+
+            const data = await postJsonWithErrors(
+                `https://generativelanguage.googleapis.com/v1beta/models/${geminiVisionModel}:generateContent?key=${geminiApiKey}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                },
+                'gemini'
+            );
+
+            const text = extractGeminiText(data);
+            if (!text) {
+                throw new Error('Gemini returned an empty OCR result.');
+            }
+
+            return text;
+        }
+
+        let sessionLogs = [];
 
         function loadLogsFromCache() {
             try {
                 const cachedData = localStorage.getItem('lotus_session_logs');
                 if (cachedData) {
                     sessionLogs = JSON.parse(cachedData) || [];
-                }
-                const cachedKey = localStorage.getItem('lotus_groq_key');
-                if (cachedKey) {
-                    groqKeyInput.value = cachedKey;
                 }
             } catch (e) {
                 sessionLogs = [];
@@ -487,6 +564,11 @@ SAXASHA IIRIUA SAIHALIUA SAIUARIQUHA JAUOPI</textarea>
             if (toggleSpaceFix.checked) {
                 if (lower === 'x') choices.push(isUpper ? 'W' : 'w');
                 if (lower === 'p') choices.push(isUpper ? 'O' : 'o');
+                if (lower === 'v') {
+                    choices.push(isUpper ? 'W' : 'w');
+                    choices.push(isUpper ? 'U' : 'u');
+                    choices.push(isUpper ? 'T' : 't');
+                }
             }
 
             return [...new Set(choices)];
@@ -638,73 +720,119 @@ SAXASHA IIRIUA SAIHALIUA SAIUARIQUHA JAUOPI</textarea>
         }
 
         function detectOptimalShift(text) {
-            let bestShift = 0;
-            let highestMatchCount = -1;
-
-            for (let shift = -12; shift <= 12; shift++) {
-                const { result } = decodeSentence(text, shift);
-                const decodedWords = cleanString(result).split(/\s+/);
-
-                let matches = 0;
-                decodedWords.forEach(word => {
-                    if (TARGET_DICTIONARY.includes(word) || Object.values(TYPO_MAP).includes(word)) {
-                        matches++;
-                    }
-                });
-
-                if (matches > highestMatchCount) {
-                    highestMatchCount = matches;
-                    bestShift = shift;
-                }
+            const topCandidates = detectTopShiftCandidates(text, 1);
+            if (topCandidates.length === 0 || topCandidates[0].matches <= 0) {
+                return {
+                    shift: 0,
+                    confidence: 0
+                };
             }
 
             return {
-                shift: bestShift,
-                confidence: highestMatchCount
+                shift: topCandidates[0].shift,
+                confidence: topCandidates[0].matches
             };
+        }
+
+        function scoreShift(text, shift) {
+            const { result } = decodeSentence(text, shift);
+            const decodedWords = cleanString(result).split(/\s+/).filter(Boolean);
+
+            let matches = 0;
+            decodedWords.forEach(word => {
+                if (TARGET_DICTIONARY.includes(word) || Object.values(TYPO_MAP).includes(word)) {
+                    matches++;
+                }
+            });
+
+            return {
+                shift,
+                matches,
+                preview: result
+            };
+        }
+
+        function detectTopShiftCandidates(text, limit = 5) {
+            const trimmedText = text.trim();
+            if (!trimmedText) return [];
+
+            const allCandidates = [];
+            for (let shift = -25; shift <= 25; shift++) {
+                allCandidates.push(scoreShift(trimmedText, shift));
+            }
+
+            allCandidates.sort((a, b) => {
+                if (b.matches !== a.matches) return b.matches - a.matches;
+                if (Math.abs(a.shift) !== Math.abs(b.shift)) return Math.abs(a.shift) - Math.abs(b.shift);
+                return a.shift - b.shift;
+            });
+
+            return allCandidates.slice(0, limit);
+        }
+
+        function renderShiftCandidates(text, currentShift) {
+            const trimmedText = text.trim();
+
+            if (!trimmedText) {
+                shiftCandidatesList.innerHTML = `<p class="text-xs text-slate-500 italic">Type or scan a message to generate shift alternatives.</p>`;
+                shiftConfidenceBadge.innerText = 'Awaiting Input';
+                shiftConfidenceBadge.className = 'text-[10px] px-2 py-0.5 rounded border border-slate-700 text-slate-400 uppercase';
+                return;
+            }
+
+            const candidates = detectTopShiftCandidates(trimmedText, 5);
+            const topConfidence = candidates.length > 0 ? candidates[0].matches : 0;
+
+            if (topConfidence > 0) {
+                shiftConfidenceBadge.innerText = `Confidence ${topConfidence}`;
+                shiftConfidenceBadge.className = 'text-[10px] px-2 py-0.5 rounded border border-emerald-800 text-emerald-300 bg-emerald-950/40 uppercase';
+            } else {
+                shiftConfidenceBadge.innerText = 'Low Confidence';
+                shiftConfidenceBadge.className = 'text-[10px] px-2 py-0.5 rounded border border-amber-800 text-amber-300 bg-amber-950/40 uppercase';
+            }
+
+            shiftCandidatesList.innerHTML = '';
+
+            candidates.forEach(candidate => {
+                const candidateBtn = document.createElement('button');
+                const isActive = candidate.shift === currentShift;
+                candidateBtn.type = 'button';
+                candidateBtn.className = isActive
+                    ? 'text-left bg-blue-950/40 border border-blue-700 rounded p-2 transition-all'
+                    : 'text-left bg-slate-900/60 border border-slate-800 rounded p-2 hover:border-slate-700 transition-all';
+
+                const shortPreview = candidate.preview.length > 32 ? `${candidate.preview.slice(0, 32)}...` : candidate.preview;
+
+                candidateBtn.innerHTML = `
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="font-bold ${isActive ? 'text-blue-300' : 'text-slate-300'}">Shift ${candidate.shift >= 0 ? '+' : ''}${candidate.shift}</span>
+                        <span class="${candidate.matches > 0 ? 'text-emerald-400' : 'text-slate-500'}">${candidate.matches} match${candidate.matches === 1 ? '' : 'es'}</span>
+                    </div>
+                    <div class="text-[10px] mt-1 ${isActive ? 'text-blue-200' : 'text-slate-400'} truncate">${shortPreview || '(empty decode)'}</div>
+                `;
+
+                candidateBtn.addEventListener('click', () => {
+                    shiftSlider.value = candidate.shift;
+                    autoDetectIndicator.innerText = `Candidate shift ${candidate.shift >= 0 ? '+' : ''}${candidate.shift} selected`;
+                    autoDetectIndicator.className = 'text-xs text-blue-400 font-semibold';
+                    updateDecryption();
+                });
+
+                shiftCandidatesList.appendChild(candidateBtn);
+            });
         }
 
         function updateDecryption() {
             const inputVal = encodedInput.value;
             const shiftVal = parseInt(shiftSlider.value);
             
-            const lines = inputVal.split('\n');
-            const decodedLines = [];
-            let allBreakdowns = [];
+            shiftBadge.innerText = (shiftVal >= 0 ? '+' : '') + shiftVal;
 
-            if (isAutoMode) {
-                shiftBadge.innerText = "Auto";
-                autoDetectIndicator.innerText = "Active Line-by-Line";
-                autoDetectIndicator.className = "text-xs text-emerald-400 font-semibold bg-emerald-950/40 border border-emerald-900/50 px-2.5 py-1 rounded";
-                
-                lines.forEach(line => {
-                    if (!line.trim()) {
-                        decodedLines.push("");
-                        return;
-                    }
-                    const opt = detectOptimalShift(line);
-                    const { result, breakdown } = decodeSentence(line, opt.shift);
-                    decodedLines.push(result);
-                    allBreakdowns = allBreakdowns.concat(breakdown);
-                });
-            } else {
-                shiftBadge.innerText = (shiftVal >= 0 ? '+' : '') + shiftVal;
-                autoDetectIndicator.innerText = `Override (${shiftVal >= 0 ? '+' : ''}${shiftVal})`;
-                autoDetectIndicator.className = "text-xs text-amber-500 font-semibold bg-amber-950/40 border border-amber-900/50 px-2.5 py-1 rounded";
-                
-                lines.forEach(line => {
-                    if (!line.trim()) {
-                        decodedLines.push("");
-                        return;
-                    }
-                    const { result, breakdown } = decodeSentence(line, shiftVal);
-                    decodedLines.push(result);
-                    allBreakdowns = allBreakdowns.concat(breakdown);
-                });
-            }
+            const { result, breakdown } = decodeSentence(inputVal, shiftVal);
+            decodedOutput.innerText = result || "";
 
-            decodedOutput.innerText = decodedLines.join('\n');
-            renderBreakdown(allBreakdowns, shiftVal);
+            renderBreakdown(breakdown, shiftVal);
+            renderShiftCandidates(inputVal, shiftVal);
         }
 
         function renderBreakdown(breakdown, shiftVal) {
@@ -760,8 +888,7 @@ SAXASHA IIRIUA SAIHALIUA SAIUARIQUHA JAUOPI</textarea>
 
                 if (item.steps && item.steps.length > 0) {
                     item.steps.forEach(step => {
-                        const targetShift = isAutoMode ? detectOptimalShift(item.rawWord).shift : shiftVal;
-                        const mathString = targetShift >= 0 ? `+ ${targetShift}` : `- ${Math.abs(targetShift)}`;
+                        const mathString = shiftVal >= 0 ? `+ ${shiftVal}` : `- ${Math.abs(shiftVal)}`;
                         
                         const itemRow = document.createElement('div');
                         itemRow.className = "flex items-center justify-between bg-slate-900/50 p-1.5 rounded text-xs border border-slate-850 font-mono";
@@ -815,66 +942,43 @@ SAXASHA IIRIUA SAIHALIUA SAIUARIQUHA JAUOPI</textarea>
             errorToast.classList.add('hidden');
             scannerLine.classList.remove('hidden');
 
-            const userKey = groqKeyInput.value.trim();
-            if (!userKey) {
-                errorToast.innerText = "Error: Please paste your Groq API Key first inside the secure settings panel.";
-                errorToast.classList.remove('hidden');
-                aiLoader.classList.add('hidden');
-                scannerLine.classList.add('hidden');
-                return;
-            }
-
-            localStorage.setItem('lotus_groq_key', userKey);
-
             try {
-                const payload = {
-                    model: "llama-3.2-11b-vision-preview",
-                    messages: [
-                        {
-                            role: "user",
-                            content: [
-                                {
-                                    type: "text",
-                                    text: "Look at this screenshot of a game chat box. Identify and extract ONLY the text colored in light blue or cyan (which is the actual chat message). Ignore white text, usernames (e.g., 'Lawful:', 'Suny:', etc. which are in different colors), and timestamps.\n\n" +
-                                          "CRITICAL: If there are multiple cyan/blue chat lines, you MUST transcribe each distinct chat message on its own separate line using a newline character (\\n). Do NOT combine multiple messages into one line.\n\n" +
-                                          "Return ONLY the exact raw extracted text as lines of space-separated words, preserving their capitalizations. " +
-                                          "Do not include markdown formatting, code blocks, explanations, or commentary."
-                                },
-                                {
-                                    type: "image_url",
-                                    image_url: {
-                                        url: `data:${mimeType};base64,${base64Data}`
-                                    }
-                                }
-                            ]
-                        }
-                    ],
-                    temperature: 0.0
-                };
+                let text = '';
+                const providerErrors = [];
 
-                const apiUrl = "https://api.groq.com/openai/v1/chat/completions";
+                for (const provider of [requestGroqVision, requestGeminiVision]) {
+                    try {
+                        text = await provider(base64Data, mimeType);
+                        break;
+                    } catch (error) {
+                        providerErrors.push(error);
+                    }
+                }
 
-                const data = await fetchWithRetry(apiUrl, {
-                    method: "POST",
-                    headers: { 
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${userKey}`
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                const text = data.choices?.[0]?.message?.content;
                 if (text) {
-                    const cleanedOutputText = text.split('\n').map(line => line.trim()).filter(line => line.length > 0).join('\n');
+                    const cleanedOutputText = text.replace(/[\r\n]+/g, ' ').trim();
                     encodedInput.value = cleanedOutputText;
                     
-                    isAutoMode = true;
+                    const detection = detectOptimalShift(cleanedOutputText);
+                    if (detection.confidence > 0) {
+                        shiftSlider.value = detection.shift;
+                        autoDetectIndicator.innerText = `Auto-Selected (Confidence: ${detection.confidence})`;
+                        autoDetectIndicator.className = "text-xs text-emerald-400 font-semibold";
+                    } else {
+                        autoDetectIndicator.innerText = "No auto-matches, manual override active";
+                        autoDetectIndicator.className = "text-xs text-slate-500";
+                    }
                     updateDecryption();
                 } else {
-                    throw new Error("No cipher text detected in the scanning sweep.");
+                    const rateLimitedFailure = providerErrors.some(isRateLimitError);
+                    if (rateLimitedFailure) {
+                        throw new Error(buildManualFallbackMessage());
+                    }
+                    throw providerErrors[providerErrors.length - 1] || new Error("No cipher text detected in the scanning sweep.");
                 }
             } catch (err) {
-                errorToast.innerText = err.message || "Failed to establish a neural connection to the analysis node.";
+                const rateLimitedFailure = isRateLimitError(err);
+                errorToast.innerText = err.message || (rateLimitedFailure ? buildManualFallbackMessage() : "Failed to establish a neural connection to the analysis node.");
                 errorToast.classList.remove('hidden');
             } finally {
                 aiLoader.classList.add('hidden');
@@ -910,7 +1014,7 @@ SAXASHA IIRIUA SAIHALIUA SAIUARIQUHA JAUOPI</textarea>
 
                 logItem.innerHTML = `
                     <div class="flex justify-between items-center text-[10px] text-slate-500">
-                        <span class="font-bold text-indigo-400">LOG #${idx + 1} &bull; SHIFT ${log.shift === "Auto" ? "Auto" : (log.shift >= 0 ? '+' : '') + log.shift}</span>
+                        <span class="font-bold text-indigo-400">LOG #${idx + 1} &bull; SHIFT ${log.shift >= 0 ? '+' : ''}${log.shift}</span>
                         <button onclick="navigator.clipboard.writeText('${log.decoded.replace(/'/g, "\\'")}');" class="text-blue-400 hover:text-blue-300 transition-colors uppercase font-bold tracking-widest text-[9px]">Copy</button>
                     </div>
                     <div class="text-slate-400 font-mono tracking-wide break-all">${log.raw}</div>
@@ -958,23 +1062,36 @@ SAXASHA IIRIUA SAIHALIUA SAIUARIQUHA JAUOPI</textarea>
         });
 
         encodedInput.addEventListener('input', () => {
+            const detection = detectOptimalShift(encodedInput.value);
+            if (detection.confidence > 0) {
+                shiftSlider.value = detection.shift;
+                autoDetectIndicator.innerText = `Auto-Selected (Confidence: ${detection.confidence})`;
+                autoDetectIndicator.className = "text-xs text-emerald-400 font-semibold";
+            } else {
+                autoDetectIndicator.innerText = "No auto-matches, manual override active";
+                autoDetectIndicator.className = "text-xs text-slate-500";
+            }
             updateDecryption();
         });
 
         shiftSlider.addEventListener('input', () => {
-            isAutoMode = false;
+            autoDetectIndicator.innerText = "Manual tune active";
+            autoDetectIndicator.className = "text-xs text-amber-500 font-semibold";
             updateDecryption();
         });
 
         autoDetectBtn.addEventListener('click', () => {
-            isAutoMode = true;
+            const detection = detectOptimalShift(encodedInput.value);
+            shiftSlider.value = detection.shift;
+            autoDetectIndicator.innerText = `Matched shift ${detection.shift >= 0 ? '+' : ''}${detection.shift} (Confidence: ${detection.confidence})`;
+            autoDetectIndicator.className = "text-xs text-emerald-400 font-semibold";
             updateDecryption();
         });
 
         saveLogBtn.addEventListener('click', () => {
             const raw = encodedInput.value.trim();
             const decoded = decodedOutput.innerText.trim();
-            const shift = isAutoMode ? "Auto" : parseInt(shiftSlider.value);
+            const shift = parseInt(shiftSlider.value);
             if (raw && decoded) {
                 writeLogToCache(raw, decoded, shift);
             }
