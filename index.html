@@ -811,26 +811,41 @@
                     <div class="text-[10px] mt-1 ${isActive ? 'text-blue-200' : 'text-slate-400'} truncate">${shortPreview || '(empty decode)'}</div>
                 `;
 
-                candidateBtn.addEventListener('click', () => {
+                candidateBtn.addEventListener('click', async () => {
                     shiftSlider.value = candidate.shift;
                     autoDetectIndicator.innerText = `Candidate shift ${candidate.shift >= 0 ? '+' : ''}${candidate.shift} selected`;
                     autoDetectIndicator.className = 'text-xs text-blue-400 font-semibold';
-                    updateDecryption();
+                    await updateDecryption();
                 });
 
                 shiftCandidatesList.appendChild(candidateBtn);
             });
         }
 
-        function updateDecryption() {
-            const inputVal = encodedInput.value;
+        async function updateDecryption() {
+            const inputVal = encodedInput.value.trim();
+            if (!inputVal) {
+                decodedOutput.innerText = '';
+                renderBreakdown([], 0);
+                return;
+            }
+        
+            try {
+                const resp = await fetch('https://emilthebest0-aurelictranslator.hf.space/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: inputVal })
+                });
+                const data = await resp.json();
+                decodedOutput.innerText = data.translation || '';
+            } catch (err) {
+                decodedOutput.innerText = 'Backend offline — check your Space is running.';
+            }
+        
+            // Keep the local breakdown panel working for the visual step-by-step
             const shiftVal = parseInt(shiftSlider.value);
-            
             shiftBadge.innerText = (shiftVal >= 0 ? '+' : '') + shiftVal;
-
-            const { result, breakdown } = decodeSentence(inputVal, shiftVal);
-            decodedOutput.innerText = result || "";
-
+            const { breakdown } = decodeSentence(inputVal, shiftVal);
             renderBreakdown(breakdown, shiftVal);
             renderShiftCandidates(inputVal, shiftVal);
         }
@@ -941,64 +956,48 @@
             aiLoader.classList.remove('hidden');
             errorToast.classList.add('hidden');
             scannerLine.classList.remove('hidden');
-
+        
             try {
-                let text = '';
-                const providerErrors = [];
-
-                for (const provider of [requestGroqVision, requestGeminiVision]) {
-                    try {
-                        text = await provider(base64Data, mimeType);
-                        break;
-                    } catch (error) {
-                        providerErrors.push(error);
-                    }
+                // Convert base64 back to a file blob to send as multipart
+                const byteString = atob(base64Data);
+                const ab = new ArrayBuffer(byteString.length);
+                const ia = new Uint8Array(ab);
+                for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+                const blob = new Blob([ab], { type: mimeType });
+        
+                const formData = new FormData();
+                formData.append('file', blob, 'screenshot.png');
+        
+                const resp = await fetch('https://emilthebest0-aurelictranslator.hf.space/translate-image', {
+                    method: 'POST',
+                    body: formData
+                });
+        
+                if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
+                const data = await resp.json();
+        
+                if (!data.lines || data.lines.length === 0) {
+                    throw new Error('No blue cipher text detected in this image.');
                 }
-
-                if (text) {
-                    const cleanedOutputText = text.replace(/[\r\n]+/g, ' ').trim();
-                    encodedInput.value = cleanedOutputText;
-                    
-                    const detection = detectOptimalShift(cleanedOutputText);
-                    if (detection.confidence > 0) {
-                        shiftSlider.value = detection.shift;
-                        autoDetectIndicator.innerText = `Auto-Selected (Confidence: ${detection.confidence})`;
-                        autoDetectIndicator.className = "text-xs text-emerald-400 font-semibold";
-                    } else {
-                        autoDetectIndicator.innerText = "No auto-matches, manual override active";
-                        autoDetectIndicator.className = "text-xs text-slate-500";
-                    }
-                    updateDecryption();
-                } else {
-                    const rateLimitedFailure = providerErrors.some(isRateLimitError);
-                    if (rateLimitedFailure) {
-                        throw new Error(buildManualFallbackMessage());
-                    }
-                    throw providerErrors[providerErrors.length - 1] || new Error("No cipher text detected in the scanning sweep.");
-                }
+        
+                // Join all extracted lines into one input
+                const rawLines = data.lines
+                    .filter(l => l.raw)
+                    .map(l => l.raw)
+                    .join(' ');
+        
+                encodedInput.value = rawLines;
+                autoDetectIndicator.innerText = `${data.lines.length} cipher line(s) extracted`;
+                autoDetectIndicator.className = 'text-xs text-emerald-400 font-semibold';
+                await updateDecryption();
+        
             } catch (err) {
-                const rateLimitedFailure = isRateLimitError(err);
-                errorToast.innerText = err.message || (rateLimitedFailure ? buildManualFallbackMessage() : "Failed to establish a neural connection to the analysis node.");
+                errorToast.innerText = err.message || 'Failed to connect to decoder backend.';
                 errorToast.classList.remove('hidden');
             } finally {
                 aiLoader.classList.add('hidden');
                 scannerLine.classList.add('hidden');
             }
-        }
-
-        function handleImageFile(file) {
-            if (!file || !file.type.startsWith('image/')) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const base64Data = e.target.result.split(',')[1];
-                imagePreview.src = e.target.result;
-                imageName.innerText = file.name;
-                uploadPrompt.classList.add('hidden');
-                previewContainer.classList.remove('hidden');
-                analyzeImage(base64Data, file.type);
-            };
-            reader.readAsDataURL(file);
         }
 
         function renderHistoryLog() {
@@ -1061,7 +1060,7 @@
             }
         });
 
-        encodedInput.addEventListener('input', () => {
+        encodedInput.addEventListener('input', async () => {
             const detection = detectOptimalShift(encodedInput.value);
             if (detection.confidence > 0) {
                 shiftSlider.value = detection.shift;
@@ -1071,21 +1070,21 @@
                 autoDetectIndicator.innerText = "No auto-matches, manual override active";
                 autoDetectIndicator.className = "text-xs text-slate-500";
             }
-            updateDecryption();
+            await updateDecryption();
         });
 
-        shiftSlider.addEventListener('input', () => {
+        shiftSlider.addEventListener('input', async () => {
             autoDetectIndicator.innerText = "Manual tune active";
             autoDetectIndicator.className = "text-xs text-amber-500 font-semibold";
-            updateDecryption();
+            await updateDecryption();
         });
 
-        autoDetectBtn.addEventListener('click', () => {
+        autoDetectBtn.addEventListener('click', async () => {
             const detection = detectOptimalShift(encodedInput.value);
             shiftSlider.value = detection.shift;
             autoDetectIndicator.innerText = `Matched shift ${detection.shift >= 0 ? '+' : ''}${detection.shift} (Confidence: ${detection.confidence})`;
             autoDetectIndicator.className = "text-xs text-emerald-400 font-semibold";
-            updateDecryption();
+            await updateDecryption();
         });
 
         saveLogBtn.addEventListener('click', () => {
@@ -1102,16 +1101,16 @@
         });
 
         [toggleVN, toggleKC, toggleSpaceFix].forEach(toggle => {
-            toggle.addEventListener('change', updateDecryption);
+            toggle.addEventListener('change', async () => await updateDecryption());
         });
 
-        clearBtn.addEventListener('click', () => {
+        clearBtn.addEventListener('click', async () => {
             encodedInput.value = '';
             uploadPrompt.classList.remove('hidden');
             previewContainer.classList.add('hidden');
             imagePreview.src = '#';
             imageName.innerText = '';
-            updateDecryption();
+            await updateDecryption();
         });
 
         copyBtn.addEventListener('click', () => {
@@ -1132,9 +1131,9 @@
             }, 1500);
         });
 
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             loadLogsFromCache();
-            updateDecryption();
+            await updateDecryption();
         });
     </script>
 
