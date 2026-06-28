@@ -65,11 +65,11 @@
                 </div>
 
                 <div class="flex flex-col gap-2">
-                    <label class="text-xs text-slate-400 uppercase tracking-wider">Visual Glyph Scanner:</label>
-                    <div id="drop-zone" class="border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-lg p-6 flex flex-col items-center justify-center transition-all cursor-pointer bg-slate-950/30 min-h-[120px] relative overflow-hidden">
+                    <label class="text-xs text-slate-400 uppercase tracking-wider">Visual Glyph Scanner (Crop tightly over text for best results):</label>
+                    <div id="drop-zone" class="border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-lg p-6 flex flex-col items-center justify-center transition-all cursor-pointer bg-slate-950/30 min-h-[160px] relative overflow-hidden">
                         <div class="absolute inset-x-0 h-0.5 bg-blue-500/30 scanner-line hidden" id="scanner-line"></div>
                         <input type="file" id="file-input" accept="image/*" class="hidden" />
-                        <div id="upload-prompt" class="flex flex-col items-center justify-center text-center">
+                        <div id="upload-prompt" class="flex flex-col items-center justify-center text-center transition-opacity duration-300">
                             <span class="text-3xl mb-2">📷</span>
                             <span class="text-xs text-slate-300 font-semibold">Drag & drop game screenshot or click to browse files</span>
                         </div>
@@ -77,6 +77,17 @@
                 </div>
 
                 <div id="error-toast" class="bg-rose-950/80 border border-rose-900 text-rose-300 text-xs px-3 py-2 rounded-lg hidden font-mono"></div>
+            </div>
+
+            <div class="bg-amber-950/20 border border-amber-900/60 rounded-xl p-4 flex gap-3 items-start">
+                <span class="text-lg mt-0.5">⚠️</span>
+                <div class="flex flex-col gap-1">
+                    <h3 class="text-xs font-bold tracking-wider text-amber-400 uppercase">SYSTEM DECRYPTION DISCLAIMERS</h3>
+                    <ul class="list-disc list-inside text-xs text-amber-200/80 space-y-1">
+                        <li><strong>Image Translation Limitations:</strong> Image-to-text scanning configuration parameters are not always 100% accurate. Background terrain elements or small layouts can obscure character values.</li>
+                        <li><strong>Algorithmic Alignment Variance:</strong> The algorithmic logical translation step is not fully guaranteed to evaluate clean outputs if cipher anomalies or user typos are injected into the text log.</li>
+                    </ul>
+                </div>
             </div>
 
             <div class="bg-slate-900/40 border border-emerald-800/60 rounded-xl p-6 backdrop-blur-sm glowing-border-success flex flex-col gap-4">
@@ -115,7 +126,6 @@
     </footer>
 
     <script>
-        // Replace line 144 in index.html with this:
         const API_URL = "https://emilthebest0-aurelictranslator.hf.space";
 
         const encodedInput = document.getElementById('encoded-input');
@@ -128,7 +138,6 @@
         const errorToast = document.getElementById('error-toast');
         const analysisContainer = document.getElementById('analysis-container');
 
-        // Handle structural text processing triggers
         async function runTextTranslation(text) {
             if (!text.trim()) {
                 decodedOutput.innerText = "AWAITING SYSTEM TRANSMISSION...";
@@ -165,24 +174,21 @@
             analysisContainer.innerHTML = html;
         }
 
-        // Update this function inside your index.html script tags
         async function runImageUploadPipeline(file) {
             errorToast.classList.add('hidden');
             aiLoader.classList.remove('hidden');
             
-            // Create a local URL for the image and set it as the background preview
+            // Render local background preview immediately
             const imageUrl = URL.createObjectURL(file);
             dropZone.style.backgroundImage = `url('${imageUrl}')`;
             dropZone.style.backgroundSize = 'contain';
             dropZone.style.backgroundPosition = 'center';
             dropZone.style.backgroundRepeat = 'no-repeat';
-            
-            // Hide the upload text prompt so the image looks clean
             document.getElementById('upload-prompt').classList.add('opacity-0');
             
             const formData = new FormData();
             formData.append('file', file);
-        
+
             try {
                 const res = await fetch(`${API_URL}/translate-image`, {
                     method: 'POST',
@@ -211,7 +217,6 @@
             errorToast.classList.remove('hidden');
         }
 
-        // Form Event Listeners
         encodedInput.addEventListener('input', (e) => runTextTranslation(e.target.value));
         
         clearBtn.addEventListener('click', () => {
@@ -219,8 +224,6 @@
             decodedOutput.innerText = "AWAITING SYSTEM TRANSMISSION...";
             analysisContainer.innerHTML = '<p class="text-slate-500 italic">No translation steps loaded yet.</p>';
             errorToast.classList.add('hidden');
-            
-            // Reset the drop-zone visual preview layout
             dropZone.style.backgroundImage = 'none';
             document.getElementById('upload-prompt').classList.remove('opacity-0');
         });
