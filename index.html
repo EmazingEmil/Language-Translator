@@ -952,6 +952,21 @@
             });
         }
 
+        function handleImageFile(file) {
+            if (!file || !file.type.startsWith('image/')) return;
+        
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Data = e.target.result.split(',')[1];
+                imagePreview.src = e.target.result;
+                imageName.innerText = file.name;
+                uploadPrompt.classList.add('hidden');
+                previewContainer.classList.remove('hidden');
+                analyzeImage(base64Data, file.type);
+            };
+            reader.readAsDataURL(file);
+        }
+
         async function analyzeImage(base64Data, mimeType) {
             aiLoader.classList.remove('hidden');
             errorToast.classList.add('hidden');
