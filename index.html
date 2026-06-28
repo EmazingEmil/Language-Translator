@@ -973,7 +973,6 @@
             scannerLine.classList.remove('hidden');
         
             try {
-                // Convert base64 back to a file blob to send as multipart
                 const byteString = atob(base64Data);
                 const ab = new ArrayBuffer(byteString.length);
                 const ia = new Uint8Array(ab);
@@ -991,24 +990,61 @@
                 if (!resp.ok) throw new Error(`Server error: ${resp.status}`);
                 const data = await resp.json();
         
+                console.log('Backend response:', JSON.stringify(data, null, 2));
+        
                 if (!data.lines || data.lines.length === 0) {
                     throw new Error('No blue cipher text detected in this image.');
                 }
         
-                // Join all extracted lines into one input
-                const rawLines = data.lines
-                    .filter(l => l.raw)
-                    .map(l => l.raw)
-                    .join(' ');
+                // Check if any lines actually have OCR text
+                const linesWithText = data.lines.filter(l => l.raw);
+                console.log(`Lines with OCR text: ${linesWithText.length} / ${data.lines.length}`);
         
+                if (linesWithText.length === 0) {
+                    // TrOCR failed for all lines — fall back to Groq/Gemini vision
+                    console.warn('TrOCR returned nothing, falling back to vision API...');
+                    throw new Error('OCR returned no text — falling back to vision API.');
+                }
+        
+                const rawLines = linesWithText.map(l => l.raw).join(' ');
                 encodedInput.value = rawLines;
-                autoDetectIndicator.innerText = `${data.lines.length} cipher line(s) extracted`;
+                autoDetectIndicator.innerText = `${linesWithText.length} cipher line(s) extracted`;
                 autoDetectIndicator.className = 'text-xs text-emerald-400 font-semibold';
                 await updateDecryption();
         
             } catch (err) {
-                errorToast.innerText = err.message || 'Failed to connect to decoder backend.';
-                errorToast.classList.remove('hidden');
+                console.warn('Backend image pipeline failed:', err.message, '— trying vision API fallback');
+        
+                // Fall back to Groq then Gemini
+                try {
+                    let text = '';
+                    const providerErrors = [];
+        
+                    for (const provider of [requestGroqVision, requestGeminiVision]) {
+                        try {
+                            text = await provider(base64Data, mimeType);
+                            break;
+                        } catch (providerErr) {
+                            providerErrors.push(providerErr);
+                        }
+                    }
+        
+                    if (text) {
+                        const cleanedText = text.replace(/[\r\n]+/g, ' ').trim();
+                        encodedInput.value = cleanedText;
+                        autoDetectIndicator.innerText = 'Extracted via vision API fallback';
+                        autoDetectIndicator.className = 'text-xs text-amber-400 font-semibold';
+                        await updateDecryption();
+                    } else {
+                        const rateLimited = providerErrors.some(isRateLimitError);
+                        throw new Error(rateLimited ? buildManualFallbackMessage() : 'No cipher text detected in image.');
+                    }
+        
+                } catch (fallbackErr) {
+                    errorToast.innerText = fallbackErr.message || 'Failed to process image.';
+                    errorToast.classList.remove('hidden');
+                }
+        
             } finally {
                 aiLoader.classList.add('hidden');
                 scannerLine.classList.add('hidden');
