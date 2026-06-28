@@ -165,14 +165,24 @@
             analysisContainer.innerHTML = html;
         }
 
-        // Send images to the remote VLM parsing pipeline
+        // Update this function inside your index.html script tags
         async function runImageUploadPipeline(file) {
             errorToast.classList.add('hidden');
             aiLoader.classList.remove('hidden');
             
+            // Create a local URL for the image and set it as the background preview
+            const imageUrl = URL.createObjectURL(file);
+            dropZone.style.backgroundImage = `url('${imageUrl}')`;
+            dropZone.style.backgroundSize = 'contain';
+            dropZone.style.backgroundPosition = 'center';
+            dropZone.style.backgroundRepeat = 'no-repeat';
+            
+            // Hide the upload text prompt so the image looks clean
+            document.getElementById('upload-prompt').classList.add('opacity-0');
+            
             const formData = new FormData();
             formData.append('file', file);
-
+        
             try {
                 const res = await fetch(`${API_URL}/translate-image`, {
                     method: 'POST',
@@ -209,6 +219,10 @@
             decodedOutput.innerText = "AWAITING SYSTEM TRANSMISSION...";
             analysisContainer.innerHTML = '<p class="text-slate-500 italic">No translation steps loaded yet.</p>';
             errorToast.classList.add('hidden');
+            
+            // Reset the drop-zone visual preview layout
+            dropZone.style.backgroundImage = 'none';
+            document.getElementById('upload-prompt').classList.remove('opacity-0');
         });
 
         copyBtn.addEventListener('click', () => {
