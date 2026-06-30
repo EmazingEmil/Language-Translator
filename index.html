@@ -68,13 +68,13 @@
                 </div>
 
                 <div class="flex flex-col gap-2">
-                    <label class="text-xs text-slate-400 uppercase tracking-wider">Visual Glyph Scanner (Crop tightly over text for best results):</label>
+                    <label class="text-xs text-slate-400 uppercase tracking-wider">Visual Glyph Scanner (Crop tightly over text or press Ctrl+V to paste):</label>
                     <div id="drop-zone" class="border-2 border-dashed border-slate-700 hover:border-blue-500 rounded-lg p-6 flex flex-col items-center justify-center transition-all cursor-pointer bg-slate-950/30 min-h-[160px] relative overflow-hidden">
                         <div class="absolute inset-x-0 h-0.5 bg-blue-500/30 scanner-line hidden" id="scanner-line"></div>
                         <input type="file" id="file-input" accept="image/*" class="hidden" />
                         <div id="upload-prompt" class="flex flex-col items-center justify-center text-center transition-opacity duration-300">
                             <span class="text-3xl mb-2">📷</span>
-                            <span class="text-xs text-slate-300 font-semibold">Drag & drop game screenshot or click to browse files</span>
+                            <span class="text-xs text-slate-300 font-semibold">Drag & drop game screenshot, paste directly via Ctrl+V, or browse files</span>
                         </div>
                     </div>
                 </div>
@@ -226,7 +226,6 @@
             const textToTranslate = encodedInput.value.trim();
             if (!textToTranslate) return;
         
-            // Show loading screen while AI processes
             errorToast.classList.add('hidden');
             aiLoader.classList.remove('hidden');
         
@@ -264,6 +263,22 @@
             e.preventDefault();
             dropZone.classList.remove('border-blue-500');
             if (e.dataTransfer.files.length > 0) runImageUploadPipeline(e.dataTransfer.files[0]);
+        });
+
+        // Listen globally for clipboard paste events linked to your pipeline!
+        window.addEventListener('paste', async (event) => {
+            const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+        
+            for (let index in items) {
+                const item = items[index];
+                
+                if (item.kind === 'file' && item.type.startsWith('image/')) {
+                    const blob = item.getAsFile();
+                    // Connect directly to your image processing pipeline logic
+                    runImageUploadPipeline(blob);
+                    break;
+                }
+            }
         });
     </script>
 </body>
